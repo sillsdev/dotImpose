@@ -58,21 +58,6 @@ dotnet build
 dotnet pack --configuration Release
 ```
 
-## Versioning
-
-The project uses a single source of truth for version numbers:
-
-- **Base Version**: Defined in `Directory.Build.props` (`<Version>2.6</Version>`)
-- **CI/CD Builds**: Automatically append GitHub run ID to create unique versions (e.g., `2.6.12345`)
-- **Manual Builds**: Use the base version from `Directory.Build.props`
-
-To build with a custom version:
-
-```bash
-dotnet build -p:Version=2.6.12345
-dotnet pack -p:Version=2.6.12345 --configuration Release
-```
-
 ## License
 
 This project is licensed under the MIT License.

@@ -1,4 +1,4 @@
-# SillsDev.Imposition.Net
+# DotImpose Library
 
 A .NET library for PDF imposition and layout operations, supporting various booklet and calendar layouts.
 
@@ -6,14 +6,16 @@ A .NET library for PDF imposition and layout operations, supporting various book
 
 ## Installation
 
+Get it from nuget:
+
 ```bash
-dotnet add package SillsDev.Imposition.Net
+dotnet add package SILLsDev.DotImpose
 ```
 
 ## Usage
 
 ```csharp
-using SillsDev.Imposition.LayoutMethods;
+using sillsdev.dotImpose.LayoutMethods;
 using PdfSharp.Drawing;
 using PdfSharp.Pdf;
 
@@ -73,4 +75,6 @@ dotnet pack -p:Version=2.6.12345 --configuration Release
 
 ## License
 
-This project is licensed under the AGPL-3.0-or-later license because it depends on [itextsharp](https://github.com/itext/itextsharp).
+This project is licensed under the MIT License.
+
+Copyright © SIL Global 2012-2025

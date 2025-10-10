@@ -2,11 +2,11 @@
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
         <OutputPath>..\output\$(Configuration)\</OutputPath>
-        <AssemblyTitle>SillsDev.Imposition.Net</AssemblyTitle>
-        <AssemblyName>SillsDev.Imposition.Net</AssemblyName>
+        <AssemblyTitle>sillsdev.dotImpose</AssemblyTitle>
+        <AssemblyName>sillsdev.dotImpose</AssemblyName>
         <Company>SIL International</Company>
-        <Product>SillsDev.Imposition.Net</Product>
-        <Copyright>© SIL International 2012-2024</Copyright>
+        <Product>sillsdev.dotImpose</Product>
+        <Copyright>© SIL Global 2012-2025</Copyright>
         <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
         <LangVersion>9.0</LangVersion>
         <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
@@ -14,14 +14,14 @@
         <!-- Suppress CS0618 warnings from PdfSharp 6.1 XUnit obsolete conversions - these are non-breaking API changes -->
         <NoWarn>$(NoWarn);CS0618</NoWarn>
         <!-- NuGet Package Properties -->
-        <PackageId>SillsDev.Imposition.Net</PackageId>
+        <PackageId>sillsdev.dotImpose</PackageId>
         <Title>PDF Imposition Library</Title>
         <Description>A .NET library for PDF imposition and layout operations, supporting various booklet and calendar layouts.</Description>
         <Authors>SIL International</Authors>
         <PackageProjectUrl>https://github.com/sillsdev/imposition.net</PackageProjectUrl>
         <RepositoryUrl>https://github.com/sillsdev/imposition.net</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
-        <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
         <PackageTags>pdf;imposition;layout;booklet;calendar</PackageTags>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
@@ -53,17 +53,11 @@
         <DebugSymbols>true</DebugSymbols>
     </PropertyGroup>
     <PropertyGroup>
-        <RootNamespace>SillsDev.Imposition</RootNamespace>
+        <RootNamespace>sillsdev.dotImpose</RootNamespace>
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="PdfSharp" Version="6.2.1" />
         <PackageReference Include="SIL.Core" Version="16.1.0-*" />
         <PackageReference Include="System.Drawing.Common" Version="6.0.0" />
-    </ItemGroup>
-    <ItemGroup>
-        <Reference Include="itextsharp">
-            <HintPath>..\lib\itextsharp.dll</HintPath>
-            <Private>True</Private>
-        </Reference>
     </ItemGroup>
 </Project>

@@ -3,21 +3,21 @@ using PdfSharp.Pdf;
 
 namespace PdfDroplet.LayoutMethods
 {
-    /// <summary>
-    /// Layout a 4up booklet that will be folded horizontally and cut vertically.  This may be
-    /// either portrait or landscape in orientation depending on the original page layout.
-    /// </summary>
-    public class SideFold4UpBookletLayouter : LayoutMethod
-    {
-        public SideFold4UpBookletLayouter():base("sideFoldCut4UpBooklet.png")
-        {
+	/// <summary>
+	/// Layout a 4up booklet that will be folded horizontally and cut vertically.  This may be
+	/// either portrait or landscape in orientation depending on the original page layout.
+	/// </summary>
+	public class SideFold4UpBookletLayouter : LayoutMethod
+	{
+		public SideFold4UpBookletLayouter() : base("sideFoldCut4UpBooklet.png")
+		{
 
-        }
+		}
 
-        public override string ToString()
-        {
-            return "Fold/Cut 4Up Booklet";
-        }
+		public override string ToString()
+		{
+			return "Fold/Cut 4Up Booklet";
+		}
 
 		/// <summary>
 		/// 4up layout requires matching paper orientation instead of the opposite paper orientation.
@@ -26,15 +26,15 @@ namespace PdfDroplet.LayoutMethods
 		protected override void SetPaperSize(PaperTarget paperTarget)
 		{
 			var size = paperTarget.GetPaperDimensions(_inputPdf.PixelHeight, _inputPdf.PixelWidth);
-			_paperWidth = size.X;
-			_paperHeight = size.Y;
+			_paperWidth = XUnit.FromPoint(size.X);
+			_paperHeight = XUnit.FromPoint(size.Y);
 		}
 
 		protected override void LayoutInner(PdfDocument outputDocument, int numberOfSheetsOfPaper, int numberOfPageSlotsAvailable, int vacats)
-        {
+		{
 			for (var idx = 1; idx <= numberOfSheetsOfPaper; idx++)
-            {
-	            XGraphics gfx;
+			{
+				XGraphics gfx;
 				// Front page of a sheet:
 				using (gfx = GetGraphicsForNewPage(outputDocument))
 				{
@@ -52,7 +52,7 @@ namespace PdfDroplet.LayoutMethods
 				using (gfx = GetGraphicsForNewPage(outputDocument))
 				{
 					if (2 * idx <= _inputPdf.PageCount) //prevent asking for page 2 with a single page document (JH Oct 2010)
-						//Left side of back
+														//Left side of back
 						DrawSuperiorSide(gfx, 2 * idx);
 
 					//Right side of the Back
@@ -84,9 +84,9 @@ namespace PdfDroplet.LayoutMethods
 			gfx.DrawImage(_inputPdf, box);
 		}
 
-        public override bool GetIsEnabled(XPdfForm inputPdf)
-        {
-            return IsPortrait(inputPdf) || IsLandscape(inputPdf);
-        }
-    }
+		public override bool GetIsEnabled(XPdfForm inputPdf)
+		{
+			return IsPortrait(inputPdf) || IsLandscape(inputPdf);
+		}
+	}
 }

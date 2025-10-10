@@ -1,154 +1,146 @@
-﻿using System.Drawing;
-using System.Drawing.Drawing2D;
-using SIL.IO;
-using PdfDroplet.Properties;
-using PdfSharp.Drawing;
+﻿using PdfSharp.Drawing;
 using PdfSharp.Pdf;
 
 namespace PdfDroplet.LayoutMethods
 {
-    public abstract class LayoutMethod
-    {
-        private readonly string _imageName;
-        protected XUnit _paperWidth;
-        protected XUnit _paperHeight;
-        protected XPdfForm _inputPdf;
-        protected bool _rightToLeft;
-        protected bool _calendarMode;
-	    protected bool _showCropMarks;
+	public abstract class LayoutMethod
+	{
+		private readonly string _imageName;
+		protected XUnit _paperWidth;
+		protected XUnit _paperHeight;
+		protected XPdfForm _inputPdf;
+		protected bool _rightToLeft;
+		protected bool _calendarMode;
+		protected bool _showCropMarks;
 
-		public const  double kMillimetersBetweenTrimAndMediaBox = 6; //I read that "3.175" is standard, but then the crop marks are barely visible. I'm concerned that if they aren't obvious, people might not understand what they are seeing, and be confused.
+		public const double kMillimetersBetweenTrimAndMediaBox = 6; //I read that "3.175" is standard, but then the crop marks are barely visible. I'm concerned that if they aren't obvious, people might not understand what they are seeing, and be confused.
 
-	    protected LayoutMethod(string imageName)
-        {
-            _imageName = imageName;
-        }
+		protected LayoutMethod(string imageName)
+		{
+			_imageName = imageName;
+		}
 
-        public virtual bool ImageIsSensitiveToOrientation
-        {
-            get { return false; }
-        }
+		public virtual bool ImageIsSensitiveToOrientation
+		{
+			get { return false; }
+		}
 
-	    /// <summary>
-	    /// Produce a new pdf with rearranged pages
-	    /// </summary>
-	    /// <param name="inputPdf">the source pdf</param>
-	    /// <param name="inputPath">the path to the source pdf (used by null layouter)</param>
-	    /// <param name="outputPath"></param>
-	    /// <param name="paperTarget">The size of the pages of the output pdf</param>
-	    /// <param name="rightToLeft">Is this a right-to-left language?  Might be better-named "backToFront"</param>
-	    /// <param name="showCropMarks">For commercial printing, make a Trimbox, BleedBox, and crop marks</param>
-	    public virtual void Layout(XPdfForm inputPdf, string inputPath, string outputPath, PaperTarget paperTarget, bool rightToLeft, bool showCropMarks)
-        {
-            _rightToLeft = rightToLeft;
-            _inputPdf = inputPdf;
-		    _showCropMarks = showCropMarks;
+		/// <summary>
+		/// Produce a new pdf with rearranged pages
+		/// </summary>
+		/// <param name="inputPdf">the source pdf</param>
+		/// <param name="inputPath">the path to the source pdf (used by null layouter)</param>
+		/// <param name="outputPath"></param>
+		/// <param name="paperTarget">The size of the pages of the output pdf</param>
+		/// <param name="rightToLeft">Is this a right-to-left language?  Might be better-named "backToFront"</param>
+		/// <param name="showCropMarks">For commercial printing, make a Trimbox, BleedBox, and crop marks</param>
+		public virtual void Layout(XPdfForm inputPdf, string inputPath, string outputPath, PaperTarget paperTarget, bool rightToLeft, bool showCropMarks)
+		{
+			_rightToLeft = rightToLeft;
+			_inputPdf = inputPdf;
+			_showCropMarks = showCropMarks;
 
-            PdfDocument outputDocument = new PdfDocument();
+			PdfDocument outputDocument = new PdfDocument();
 
-            // Show single pages
-            // (Note: one page contains two pages from the source document.
-            //  If the number of pages of the source document can not be
-            //  divided by 4, the first pages of the output document will
-            //  each contain only one page from the source document.)
-            outputDocument.PageLayout = PdfPageLayout.SinglePage;
+			// Show single pages
+			// (Note: one page contains two pages from the source document.
+			//  If the number of pages of the source document can not be
+			//  divided by 4, the first pages of the output document will
+			//  each contain only one page from the source document.)
+			outputDocument.PageLayout = PdfPageLayout.SinglePage;
 
-            // Determine width and height
-            SetPaperSize(paperTarget);
+			// Determine width and height
+			SetPaperSize(paperTarget);
 
 
-            int inputPages = _inputPdf.PageCount;
-            int numberOfSheetsOfPaper = inputPages / 4;
-            if (numberOfSheetsOfPaper * 4 < inputPages)
-                numberOfSheetsOfPaper += 1;
-            int numberOfPageSlotsAvailable = 4 * numberOfSheetsOfPaper;
-            int vacats = numberOfPageSlotsAvailable - inputPages;
+			int inputPages = _inputPdf.PageCount;
+			int numberOfSheetsOfPaper = inputPages / 4;
+			if (numberOfSheetsOfPaper * 4 < inputPages)
+				numberOfSheetsOfPaper += 1;
+			int numberOfPageSlotsAvailable = 4 * numberOfSheetsOfPaper;
+			int vacats = numberOfPageSlotsAvailable - inputPages;
 
 			LayoutInner(outputDocument, numberOfSheetsOfPaper, numberOfPageSlotsAvailable, vacats);
 
-//            if(true)
-//                foreach (PdfPage page in outputDocument.Pages)
-//                {
-//
-//                   var  gfx = XGraphics.FromPdfPage(page);
-//                    gfx.DrawImage(page, 0.0,0.0);
-//                    page.MediaBox = new PdfRectangle(new XPoint(m.X2, m.Y1), new XPoint(m.X1, m.Y2));
-//                }
-            outputDocument.Save(outputPath);
-        }
+			//            if(true)
+			//                foreach (PdfPage page in outputDocument.Pages)
+			//                {
+			//
+			//                   var  gfx = XGraphics.FromPdfPage(page);
+			//                    gfx.DrawImage(page, 0.0,0.0);
+			//                    page.MediaBox = new PdfRectangle(new XPoint(m.X2, m.Y1), new XPoint(m.X1, m.Y2));
+			//                }
+			outputDocument.Save(outputPath);
+		}
 
-	    protected virtual void SetPaperSize(PaperTarget paperTarget)
-	    {
-		    _paperWidth = paperTarget.GetPaperDimensions(_inputPdf.PixelWidth, _inputPdf.PixelHeight).X;
-		    _paperHeight = paperTarget.GetPaperDimensions(_inputPdf.PixelWidth, _inputPdf.PixelHeight).Y;
-	    }
+		protected virtual void SetPaperSize(PaperTarget paperTarget)
+		{
+			var dimensions = paperTarget.GetPaperDimensions(_inputPdf.PixelWidth, _inputPdf.PixelHeight);
+			_paperWidth = XUnit.FromPoint(dimensions.X);
+			_paperHeight = XUnit.FromPoint(dimensions.Y);
+		}
 
 		protected abstract void LayoutInner(PdfDocument outputDocument, int numberOfSheetsOfPaper, int numberOfPageSlotsAvailable, int vacats);
 
 
-	    protected XGraphics GetGraphicsForNewPage(PdfDocument outputDocument)
-	    {
-		    XGraphics gfx;
-		    PdfPage page = outputDocument.AddPage();
-		    //page.Orientation = PageOrientation.Landscape;//review: why does this say it's always landscape (and why does that work?) Or maybe it has no effect?
+		protected XGraphics GetGraphicsForNewPage(PdfDocument outputDocument)
+		{
+			XGraphics gfx;
+			PdfPage page = outputDocument.AddPage();
+			//page.Orientation = PageOrientation.Landscape;//review: why does this say it's always landscape (and why does that work?) Or maybe it has no effect?
 
 			var xunitsBetweenTrimAndMediaBox = XUnit.FromMillimeter(kMillimetersBetweenTrimAndMediaBox);
 
 			if (_showCropMarks)
-		    {
-			    page.Width = XUnit.FromMillimeter(_paperWidth.Millimeter+(2.0*kMillimetersBetweenTrimAndMediaBox));
+			{
+				page.Width = XUnit.FromMillimeter(_paperWidth.Millimeter + (2.0 * kMillimetersBetweenTrimAndMediaBox));
 				page.Height = XUnit.FromMillimeter(_paperHeight.Millimeter + (2.0 * kMillimetersBetweenTrimAndMediaBox)); ;
-			    page.TrimBox = GetTrimBoxRectangle();
-			    //page.CropBox = page.TrimBox;
-		    }
-		    else
-		    {
+				page.TrimBox = GetTrimBoxRectangle();
+				//page.CropBox = page.TrimBox;
+			}
+			else
+			{
 				page.Width = _paperWidth;
 				page.Height = _paperHeight;
-		    }
+			}
 
 			gfx = XGraphics.FromPdfPage(page);
 
 			if (_showCropMarks)
-		    {
-			    DrawCropMarks(page, gfx, xunitsBetweenTrimAndMediaBox);
+			{
+				DrawCropMarks(page, gfx, xunitsBetweenTrimAndMediaBox);
 				//push the page down and to the left
-				gfx.TranslateTransform(xunitsBetweenTrimAndMediaBox,xunitsBetweenTrimAndMediaBox);
-		    }
+				gfx.TranslateTransform(xunitsBetweenTrimAndMediaBox.Point, xunitsBetweenTrimAndMediaBox.Point);
+			}
 
-		    if (Settings.Default.Mirror)
-            {
-                var mirrorMatrix = new XMatrix(-1, 0, 0, 1, 0, 0);
-                gfx.MultiplyTransform(mirrorMatrix);
-                gfx.TranslateTransform(-_paperWidth, 1);
-            }
+			// Mirror support removed - was UI-specific
 
-            return gfx;
-        }
-
-	    protected PdfRectangle GetTrimBoxRectangle()
-	    {
-			var xunitsBetweenTrimAndMediaBox = XUnit.FromMillimeter(kMillimetersBetweenTrimAndMediaBox);
-			XPoint upperLeftTrimBoxCorner = new XPoint(xunitsBetweenTrimAndMediaBox, xunitsBetweenTrimAndMediaBox);
-			return new PdfRectangle(upperLeftTrimBoxCorner, new XSize(_paperWidth, _paperHeight));
+			return gfx;
 		}
 
-	    protected double LeftEdgeForSuperiorPage
-	    {
-		    get { return _rightToLeft ? _paperWidth / 2 : 0; }
-	    }
+		protected PdfRectangle GetTrimBoxRectangle()
+		{
+			var xunitsBetweenTrimAndMediaBox = XUnit.FromMillimeter(kMillimetersBetweenTrimAndMediaBox);
+			XPoint upperLeftTrimBoxCorner = new XPoint(xunitsBetweenTrimAndMediaBox.Point, xunitsBetweenTrimAndMediaBox.Point);
+			return new PdfRectangle(upperLeftTrimBoxCorner, new XSize(_paperWidth.Point, _paperHeight.Point));
+		}
 
-	    protected double LeftEdgeForInferiorPage
-	    {
-		    get { return _rightToLeft ? 0 : _paperWidth / 2; }
-	    }
+		protected double LeftEdgeForSuperiorPage
+		{
+			get { return _rightToLeft ? _paperWidth.Point / 2 : XUnit.FromPoint(0).Point; }
+		}
 
-	    private static void DrawCropMarks(PdfPage page, XGraphics gfx, XUnit xunitsBetweenTrimAndMediaBox)
-	    {
-		    XPoint upperLeftTrimBoxCorner = page.TrimBox.ToXRect().TopLeft;
+		protected double LeftEdgeForInferiorPage
+		{
+			get { return _rightToLeft ? XUnit.FromPoint(0).Point : _paperWidth.Point / 2; }
+		}
+
+		private static void DrawCropMarks(PdfPage page, XGraphics gfx, XUnit xunitsBetweenTrimAndMediaBox)
+		{
+			XPoint upperLeftTrimBoxCorner = page.TrimBox.ToXRect().TopLeft;
 			XPoint upperRightTrimBoxCorner = page.TrimBox.ToXRect().TopRight;
-		    XPoint lowerLeftTrimBoxCorner = page.TrimBox.ToXRect().BottomLeft;
-		    XPoint lowerRightTrimBoxCorner = page.TrimBox.ToXRect().BottomRight;
+			XPoint lowerLeftTrimBoxCorner = page.TrimBox.ToXRect().BottomLeft;
+			XPoint lowerRightTrimBoxCorner = page.TrimBox.ToXRect().BottomRight;
 
 			//while blue would look nicer, then if they make color separations, the marks wouldn't show all all of them.
 			//Note that in InDesign, there is a "registration color" which looks black but is actually 100% of all each
@@ -156,50 +148,45 @@ namespace PdfDroplet.LayoutMethods
 			//.25 is a standard width
 			var pen = new XPen(XColor.FromKnownColor(XKnownColor.Black), .25);
 
-		    var gapLength = XUnit.FromMillimeter(3.175); // this 3.175 is the industry standard
+			var gapLength = XUnit.FromMillimeter(3.175); // this 3.175 is the industry standard
 
-		    gfx.DrawLine(pen, upperLeftTrimBoxCorner.X - gapLength, upperLeftTrimBoxCorner.Y,
-		                 upperLeftTrimBoxCorner.X - xunitsBetweenTrimAndMediaBox, upperLeftTrimBoxCorner.Y);
-		    gfx.DrawLine(pen, upperLeftTrimBoxCorner.X, upperLeftTrimBoxCorner.Y - gapLength, upperLeftTrimBoxCorner.X,
-		                 upperLeftTrimBoxCorner.Y - xunitsBetweenTrimAndMediaBox);
+			gfx.DrawLine(pen, XUnit.FromPoint(upperLeftTrimBoxCorner.X - gapLength.Point).Point, upperLeftTrimBoxCorner.Y,
+						 XUnit.FromPoint(upperLeftTrimBoxCorner.X - xunitsBetweenTrimAndMediaBox.Point).Point, upperLeftTrimBoxCorner.Y);
+			gfx.DrawLine(pen, upperLeftTrimBoxCorner.X, XUnit.FromPoint(upperLeftTrimBoxCorner.Y - gapLength.Point).Point, upperLeftTrimBoxCorner.X,
+						 XUnit.FromPoint(upperLeftTrimBoxCorner.Y - xunitsBetweenTrimAndMediaBox.Point).Point);
 
-		    gfx.DrawLine(pen, upperRightTrimBoxCorner.X + gapLength, upperRightTrimBoxCorner.Y,
-		                 upperRightTrimBoxCorner.X + xunitsBetweenTrimAndMediaBox, upperLeftTrimBoxCorner.Y);
-		    gfx.DrawLine(pen, upperRightTrimBoxCorner.X, upperRightTrimBoxCorner.Y - gapLength, upperRightTrimBoxCorner.X,
-		                 upperLeftTrimBoxCorner.Y - xunitsBetweenTrimAndMediaBox);
+			gfx.DrawLine(pen, XUnit.FromPoint(upperRightTrimBoxCorner.X + gapLength.Point).Point, upperRightTrimBoxCorner.Y,
+						 XUnit.FromPoint(upperRightTrimBoxCorner.X + xunitsBetweenTrimAndMediaBox.Point).Point, upperLeftTrimBoxCorner.Y);
+			gfx.DrawLine(pen, upperRightTrimBoxCorner.X, XUnit.FromPoint(upperRightTrimBoxCorner.Y - gapLength.Point).Point, upperRightTrimBoxCorner.X,
+						 XUnit.FromPoint(upperLeftTrimBoxCorner.Y - xunitsBetweenTrimAndMediaBox.Point).Point);
 
-		    gfx.DrawLine(pen, lowerLeftTrimBoxCorner.X - gapLength, lowerLeftTrimBoxCorner.Y,
-		                 lowerLeftTrimBoxCorner.X - xunitsBetweenTrimAndMediaBox, lowerLeftTrimBoxCorner.Y);
-		    gfx.DrawLine(pen, lowerLeftTrimBoxCorner.X, lowerLeftTrimBoxCorner.Y + gapLength, lowerLeftTrimBoxCorner.X,
-		                 lowerLeftTrimBoxCorner.Y + xunitsBetweenTrimAndMediaBox);
+			gfx.DrawLine(pen, XUnit.FromPoint(lowerLeftTrimBoxCorner.X - gapLength.Point).Point, lowerLeftTrimBoxCorner.Y,
+						 XUnit.FromPoint(lowerLeftTrimBoxCorner.X - xunitsBetweenTrimAndMediaBox.Point).Point, lowerLeftTrimBoxCorner.Y);
+			gfx.DrawLine(pen, lowerLeftTrimBoxCorner.X, XUnit.FromPoint(lowerLeftTrimBoxCorner.Y + gapLength.Point).Point, lowerLeftTrimBoxCorner.X,
+						 XUnit.FromPoint(lowerLeftTrimBoxCorner.Y + xunitsBetweenTrimAndMediaBox.Point).Point);
 
-		    gfx.DrawLine(pen, lowerRightTrimBoxCorner.X + gapLength, lowerRightTrimBoxCorner.Y,
-		                 lowerRightTrimBoxCorner.X + xunitsBetweenTrimAndMediaBox, lowerRightTrimBoxCorner.Y);
-		    gfx.DrawLine(pen, lowerRightTrimBoxCorner.X, lowerRightTrimBoxCorner.Y + gapLength, lowerRightTrimBoxCorner.X,
-		                 lowerRightTrimBoxCorner.Y + xunitsBetweenTrimAndMediaBox);
-	    }
+			gfx.DrawLine(pen, XUnit.FromPoint(lowerRightTrimBoxCorner.X + gapLength.Point).Point, lowerRightTrimBoxCorner.Y,
+						 XUnit.FromPoint(lowerRightTrimBoxCorner.X + xunitsBetweenTrimAndMediaBox.Point).Point, lowerRightTrimBoxCorner.Y);
+			gfx.DrawLine(pen, lowerRightTrimBoxCorner.X, XUnit.FromPoint(lowerRightTrimBoxCorner.Y + gapLength.Point).Point, lowerRightTrimBoxCorner.X,
+						 XUnit.FromPoint(lowerRightTrimBoxCorner.Y + xunitsBetweenTrimAndMediaBox.Point).Point);
+		}
 
 
-	    public abstract bool GetIsEnabled(XPdfForm inputPdf);
+		public abstract bool GetIsEnabled(XPdfForm inputPdf);
 
-        public virtual Image GetImage(bool isLandscape)
-        {
-            return Image.FromFile(FileLocationUtilities.GetFileDistributedWithApplication("images", _imageName));
-        }
+		public static bool IsLandscape(XPdfForm inputPdf)
+		{
+			return inputPdf != null && inputPdf.PixelWidth > inputPdf.PixelHeight;
+		}
 
-        public static bool IsLandscape(XPdfForm inputPdf)
-        {
-            return inputPdf != null && inputPdf.PixelWidth > inputPdf.PixelHeight;
-        }
+		public static bool IsPortrait(XPdfForm inputPdf)
+		{
+			return inputPdf != null && inputPdf.PixelWidth < inputPdf.PixelHeight;
+		}
 
-        public static bool IsPortrait(XPdfForm inputPdf)
-        {
-            return inputPdf != null && inputPdf.PixelWidth < inputPdf.PixelHeight;
-        }
-
-        public static bool IsSquare(XPdfForm inputPdf)
-        {
-            return inputPdf != null && inputPdf.PixelWidth == inputPdf.PixelHeight;
-        }
-    }
+		public static bool IsSquare(XPdfForm inputPdf)
+		{
+			return inputPdf != null && inputPdf.PixelWidth == inputPdf.PixelHeight;
+		}
+	}
 }

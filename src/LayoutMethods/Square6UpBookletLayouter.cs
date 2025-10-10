@@ -16,10 +16,10 @@ namespace PdfDroplet.LayoutMethods
     /// </remarks>
     public class Square6UpBookletLayouter : LayoutMethod
     {
-	    // 42.5197pt = 15mm.  This centers 6up 13cm square pages vertically on A3 paper [(420-390)/2 = 15]
-	    private const double TopMargin = 42.5197;
+        // 42.5197pt = 15mm.  This centers 6up 13cm square pages vertically on A3 paper [(420-390)/2 = 15]
+        private const double TopMargin = 42.5197;
 
-        public Square6UpBookletLayouter():base("square6UpBooklet.png")
+        public Square6UpBookletLayouter() : base("square6UpBooklet.png")
         {
 
         }
@@ -29,50 +29,50 @@ namespace PdfDroplet.LayoutMethods
             return "Fold/Cut 6Up Square Booklet";
         }
 
-		/// <summary>
-		/// 6up layout requires portrait orientation of the paper.
-		/// This method achieves that happy state.
-		/// </summary>
-		protected override void SetPaperSize(PaperTarget paperTarget)
-		{
-			var size = paperTarget.GetPaperDimensions(_inputPdf.PixelHeight, _inputPdf.PixelWidth);
-			_paperWidth = size.X;
-			_paperHeight = size.Y;
-		}
-
-		protected override void LayoutInner(PdfDocument outputDocument, int numberOfSheetsOfPaper, int numberOfPageSlotsAvailable, int vacats)
+        /// <summary>
+        /// 6up layout requires portrait orientation of the paper.
+        /// This method achieves that happy state.
+        /// </summary>
+        protected override void SetPaperSize(PaperTarget paperTarget)
         {
-			for (var idx = 1; idx <= numberOfSheetsOfPaper; idx++)
+            var size = paperTarget.GetPaperDimensions(_inputPdf.PixelHeight, _inputPdf.PixelWidth);
+            _paperWidth = XUnit.FromPoint(size.X);
+            _paperHeight = XUnit.FromPoint(size.Y);
+        }
+
+        protected override void LayoutInner(PdfDocument outputDocument, int numberOfSheetsOfPaper, int numberOfPageSlotsAvailable, int vacats)
+        {
+            for (var idx = 1; idx <= numberOfSheetsOfPaper; idx++)
             {
-	            XGraphics gfx;
-				// Front page of a sheet:
-				using (gfx = GetGraphicsForNewPage(outputDocument))
-				{
-					//Left side of front
-					if (vacats > 0) // Skip if left side has to remain blank
-						vacats -= 1;
-					else
-						DrawSuperiorSide(gfx, numberOfPageSlotsAvailable + 2 * (1 - idx));
+                XGraphics gfx;
+                // Front page of a sheet:
+                using (gfx = GetGraphicsForNewPage(outputDocument))
+                {
+                    //Left side of front
+                    if (vacats > 0) // Skip if left side has to remain blank
+                        vacats -= 1;
+                    else
+                        DrawSuperiorSide(gfx, numberOfPageSlotsAvailable + 2 * (1 - idx));
 
-					//Right side of the front
-					DrawInferiorSide(gfx, 2 * idx - 1);
-				}
+                    //Right side of the front
+                    DrawInferiorSide(gfx, 2 * idx - 1);
+                }
 
-				// Back page of a sheet
-				using (gfx = GetGraphicsForNewPage(outputDocument))
-				{
-					if (2 * idx <= _inputPdf.PageCount) //prevent asking for page 2 with a single page document (JH Oct 2010)
-						//Left side of back
-						DrawSuperiorSide(gfx, 2 * idx);
+                // Back page of a sheet
+                using (gfx = GetGraphicsForNewPage(outputDocument))
+                {
+                    if (2 * idx <= _inputPdf.PageCount) //prevent asking for page 2 with a single page document (JH Oct 2010)
+                                                        //Left side of back
+                        DrawSuperiorSide(gfx, 2 * idx);
 
-					//Right side of the Back
-					if (vacats > 0) // Skip if right side has to remain blank
-						vacats -= 1;
-					else
-						DrawInferiorSide(gfx, numberOfPageSlotsAvailable + 1 - 2 * idx);
-				}
-			}
-		}
+                    //Right side of the Back
+                    if (vacats > 0) // Skip if right side has to remain blank
+                        vacats -= 1;
+                    else
+                        DrawInferiorSide(gfx, numberOfPageSlotsAvailable + 1 - 2 * idx);
+                }
+            }
+        }
 
         private void DrawInferiorSide(XGraphics gfx, int pageNumber)
         {
@@ -85,18 +85,18 @@ namespace PdfDroplet.LayoutMethods
                 boxSize = _inputPdf.PointWidth;
             }
             _inputPdf.PageNumber = pageNumber;
-			var box = new XRect(leftEdge, TopMargin, boxSize, boxSize);
-			gfx.DrawImage(_inputPdf, box);
+            var box = new XRect(leftEdge, TopMargin, boxSize, boxSize);
+            gfx.DrawImage(_inputPdf, box);
             _inputPdf.PageNumber = pageNumber;
             box = new XRect(leftEdge, boxSize + TopMargin, boxSize, boxSize);
             gfx.DrawImage(_inputPdf, box);
             _inputPdf.PageNumber = pageNumber;
             box = new XRect(leftEdge, 2 * boxSize + TopMargin, boxSize, boxSize);
             gfx.DrawImage(_inputPdf, box);
-		}
+        }
 
-		private void DrawSuperiorSide(XGraphics gfx, int pageNumber)
-		{
+        private void DrawSuperiorSide(XGraphics gfx, int pageNumber)
+        {
             var leftEdge = LeftEdgeForSuperiorPage;
             var boxSize = _paperWidth / 2;
             if (_inputPdf.PointWidth < _paperWidth / 2)
@@ -105,16 +105,16 @@ namespace PdfDroplet.LayoutMethods
                     leftEdge = (_paperWidth / 2) - _inputPdf.PointWidth;
                 boxSize = _inputPdf.PointWidth;
             }
-			_inputPdf.PageNumber = pageNumber;
-			var box = new XRect(leftEdge, TopMargin, boxSize, boxSize);
-			gfx.DrawImage(_inputPdf, box);
+            _inputPdf.PageNumber = pageNumber;
+            var box = new XRect(leftEdge, TopMargin, boxSize, boxSize);
+            gfx.DrawImage(_inputPdf, box);
             _inputPdf.PageNumber = pageNumber;
             box = new XRect(leftEdge, boxSize + TopMargin, boxSize, boxSize);
             gfx.DrawImage(_inputPdf, box);
             _inputPdf.PageNumber = pageNumber;
-            box = new XRect(leftEdge, 2* boxSize + TopMargin, boxSize, boxSize);
+            box = new XRect(leftEdge, 2 * boxSize + TopMargin, boxSize, boxSize);
             gfx.DrawImage(_inputPdf, box);
-		}
+        }
 
         public override bool GetIsEnabled(XPdfForm inputPdf)
         {

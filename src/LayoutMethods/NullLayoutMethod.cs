@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Drawing;
 using System.IO;
-using SIL.IO;
 using PdfSharp.Drawing;
 using PdfSharp.Pdf;
 using PdfSharp.Pdf.IO;
@@ -12,8 +10,8 @@ namespace PdfDroplet.LayoutMethods
 	/// Pass the input PDF file along to the output, optionally setting the TrimBox, ArtBox, and BleedBox
 	/// to a smaller size offset inside the MediaBox (and CropBox).
 	/// </summary>
-    public class NullLayoutMethod :LayoutMethod
-    {
+	public class NullLayoutMethod : LayoutMethod
+	{
 		protected double _bleedMM;
 		private const double kBleedMicroDeltaMM = 0.01; // use for floating point comparisons instead of 0.0
 
@@ -22,42 +20,42 @@ namespace PdfDroplet.LayoutMethods
 		/// (TrimBox the same as the MediaBox).
 		/// </summary>
 		/// <param name="bleedMM"></param>
-		public NullLayoutMethod(double bleedMM=0.0) : base("")
+		public NullLayoutMethod(double bleedMM = 0.0) : base("")
 		{
 			_bleedMM = bleedMM;
 		}
 
 		public override void Layout(XPdfForm inputPdf, string inputPath, string outputPath, PaperTarget paperTarget, bool rightToLeft, bool showCropMarks)
-        {
-	        if (!showCropMarks && Math.Abs(_bleedMM) < kBleedMicroDeltaMM)
-	        {
-		        File.Copy(inputPath, outputPath, true); // we don't have any value to add, so just deliver a copy of the original
-	        }
+		{
+			if (!showCropMarks && Math.Abs(_bleedMM) < kBleedMicroDeltaMM)
+			{
+				File.Copy(inputPath, outputPath, true); // we don't have any value to add, so just deliver a copy of the original
+			}
 			else
 			{
 				//_rightToLeft = rightToLeft;
 				_inputPdf = inputPdf;
 				_showCropMarks = showCropMarks;
 
-	            PdfDocument outputDocument = new PdfDocument();
+				PdfDocument outputDocument = new PdfDocument();
 				outputDocument.PageLayout = PdfPageLayout.SinglePage;
 
 				// Despite the name, PixelWidth is the same as PointWidth, just as an integer instead of
 				// double precision.  We may as well use all the precision we can get.
-				_paperWidth = _inputPdf.PointWidth;
-				_paperHeight =_inputPdf.PointHeight;
+				_paperWidth = XUnit.FromPoint(_inputPdf.PointWidth);
+				_paperHeight = XUnit.FromPoint(_inputPdf.PointHeight);
 
 				// NB: Setting outputDocument.Settings.TrimMargins.All does not do what we want: it either
 				// shrinks or expands the MediaBox/CropBox/BleedBox sizes.  It does not change either
 				// TrimBox or ArtBox.
 
 				for (int idx = 1; idx <= _inputPdf.PageCount; idx++)
-	            {
-		            using (XGraphics gfx = GetGraphicsForNewPage(outputDocument))
-		            {
-			            DrawPage(gfx, idx);
-		            }
-	            }
+				{
+					using (XGraphics gfx = GetGraphicsForNewPage(outputDocument))
+					{
+						DrawPage(gfx, idx);
+					}
+				}
 
 				if (Math.Abs(_bleedMM) > kBleedMicroDeltaMM)
 				{
@@ -91,42 +89,37 @@ namespace PdfDroplet.LayoutMethods
 				{
 					outputDocument.Save(outputPath);
 				}
-            }
-        }
+			}
+		}
 
-	    protected override void LayoutInner(PdfDocument outputDocument, int numberOfSheetsOfPaper, int numberOfPageSlotsAvailable, int vacats)
-	    {
-		    throw new NotImplementedException();
-	    }
+		protected override void LayoutInner(PdfDocument outputDocument, int numberOfSheetsOfPaper, int numberOfPageSlotsAvailable, int vacats)
+		{
+			throw new NotImplementedException();
+		}
 
-	    private void DrawPage(XGraphics targetGraphicsPort, int pageNumber)
-	    {
-		    _inputPdf.PageNumber = pageNumber;
-			
-		    XRect sourceRect = new XRect(0, 0, _inputPdf.PixelWidth,_inputPdf.PixelHeight);	    
+		private void DrawPage(XGraphics targetGraphicsPort, int pageNumber)
+		{
+			_inputPdf.PageNumber = pageNumber;
+
+			XRect sourceRect = new XRect(0, 0, _inputPdf.PixelWidth, _inputPdf.PixelHeight);
 			//what's not obvious here is that the targetGraphicsPort has previously been
 			//set up to do a transformation to shift the content down and to the right into its trimbox
-		    targetGraphicsPort.DrawImage(_inputPdf, sourceRect);
-	    }
+			targetGraphicsPort.DrawImage(_inputPdf, sourceRect);
+		}
 
-	    public override bool GetIsEnabled(XPdfForm inputPdf)
-        {
-            return true;
-        }
-        public override string ToString()
-        {
-            return "Original";
-        }
+		public override bool GetIsEnabled(XPdfForm inputPdf)
+		{
+			return true;
+		}
+		public override string ToString()
+		{
+			return "Original";
+		}
 
-        public override Image GetImage(bool isLandscape)
-        {
-            return Image.FromFile(FileLocationUtilities.GetFileDistributedWithApplication("images", isLandscape ? "originalLandscape.png" : "originalPortrait.png"));
-        }
+		public override bool ImageIsSensitiveToOrientation
+		{
+			get { return true; }
+		}
 
-        public override bool ImageIsSensitiveToOrientation
-        {
-            get { return true; }
-        }
-
-    }
+	}
 }

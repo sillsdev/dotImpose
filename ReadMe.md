@@ -1,20 +1,76 @@
-PdfDroplet is a free, simple little gui tool which only does one thing:  it takes your PDF and gives you a new one, with the pages combined and reordered, ready for saving & printing as booklets.
+# SillsDev.Imposition.Net
 
-PdfDroplet.exe can also be used as a library for making booklets in other programs. [Bloom](https://github.com/BloomBooks/BloomDesktop) uses it this way.
+A .NET library for PDF imposition and layout operations, supporting various booklet and calendar layouts.
 
-The gui has only been released on Windows, but on Linux PdfDroplet has been used as a non-gui library.
+[PdfDroplet](https://github.com/sillsdev/pdfdroplet) and [Bloom](https://github.com/BloomBooks/BloomDesktop) use this library for generating print-ready PDF layouts.
 
-## Building ##
+## Installation
 
-Build the solution PdfDroplet.sln. On Windows, use at least the 2022 Community edition of Visual Studio.  On Linux, you need msbuild and at least mono 6.
+```bash
+dotnet add package SillsDev.Imposition.Net
+```
 
-In order to get a preview of the output inside of PdfDroplet, you will need a PDF viewer which integrates with Internet Explorer. Acrobat Reader, PdfXchange, and FoxIt all do this. Or, use https://github.com/sillsdev/SmallPdfDropletTest to test via command line.
+## Usage
 
-## Disable Analytics
+```csharp
+using SillsDev.Imposition.LayoutMethods;
+using PdfSharp.Drawing;
+using PdfSharp.Pdf;
 
-We don't want developer and tester runs (and crashes) polluting our statistics. Add the environment variable "feedback" with value "off".
+// Open an input PDF
+var inputPdf = XPdfForm.FromFile("input.pdf");
 
+// Choose a layout method
+var layoutMethod = new SideFoldBookletLayouter(); // or other layout methods
 
-## Continuous Build System
+// Define paper target
+var paperTarget = new PaperTarget("A4", PdfSharp.PageSize.A4);
 
-Each time code is checked in, an automatic build begins on our [TeamCity build server](http://build.palaso.org/project.html?projectId=PdfDroplet). Similarly, when there is a new version of a PDFDroplet dependency (e.g. SIL.Core), that server automatically rebuilds PDFDroplet.
+// Perform the layout
+layoutMethod.Layout(inputPdf, "input.pdf", "output.pdf", paperTarget, rightToLeft: false, showCropMarks: false);
+```
+
+## Available Layout Methods
+
+- `NullLayoutMethod` - Original layout (no changes)
+- `SideFoldBookletLayouter` - Side-fold booklet layout
+- `CalendarLayouter` - Calendar fold layout
+- `CutLandscapeLayout` - Cut landscape layout
+- `SideFold4UpBookletLayouter` - 4-up side-fold booklet
+- `SideFold4UpSingleBookletLayouter` - 4-up single booklet
+- `Folded8Up8PageBookletLayouter` - 8-up folded booklet
+- `Square6UpBookletLayouter` - 6-up square booklet
+
+## Features
+
+- Multiple PDF imposition layouts
+- Support for right-to-left languages
+- Crop marks for commercial printing
+
+## Building
+
+Build the solution using .NET 8.0:
+
+```bash
+dotnet build
+dotnet pack --configuration Release
+```
+
+## Versioning
+
+The project uses a single source of truth for version numbers:
+
+- **Base Version**: Defined in `Directory.Build.props` (`<Version>2.6</Version>`)
+- **CI/CD Builds**: Automatically append GitHub run ID to create unique versions (e.g., `2.6.12345`)
+- **Manual Builds**: Use the base version from `Directory.Build.props`
+
+To build with a custom version:
+
+```bash
+dotnet build -p:Version=2.6.12345
+dotnet pack -p:Version=2.6.12345 --configuration Release
+```
+
+## License
+
+This project is licensed under the AGPL-3.0-or-later license because it depends on [itextsharp](https://github.com/itext/itextsharp).

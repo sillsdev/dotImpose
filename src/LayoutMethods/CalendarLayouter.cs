@@ -1,7 +1,7 @@
 ﻿using PdfSharp.Drawing;
 using PdfSharp.Pdf;
 
-namespace PdfDroplet.LayoutMethods
+namespace DotImpose.LayoutMethods
 {
     /// <summary>
     /// TODO: separate out the calendar case from this (which is triggered when input width>height)
@@ -20,7 +20,7 @@ namespace PdfDroplet.LayoutMethods
             return "Calendar Fold";
         }
 
-		protected override void LayoutInner(PdfDocument outputDocument, int numberOfSheetsOfPaper, int numberOfPageSlotsAvailable, int vacats)
+        protected override void LayoutInner(PdfDocument outputDocument, int numberOfSheetsOfPaper, int numberOfPageSlotsAvailable, int vacats)
         {
             XGraphics gfx;
             for (int idx = 1; idx <= numberOfSheetsOfPaper; idx++)
@@ -43,13 +43,13 @@ namespace PdfDroplet.LayoutMethods
                 // Back page of a sheet
                 using (gfx = GetGraphicsForNewPage(outputDocument))
                 {
-					gfx.RotateTransform(180);
-					//NB: see interesting method for computing how much you have to shift it over, based
-					//on the angle you are rotating:  http://social.msdn.microsoft.com/Forums/en-US/csharpgeneral/thread/a1e62e03-d732-444d-bb3d-6e7907fd5e16
+                    gfx.RotateTransform(180);
+                    //NB: see interesting method for computing how much you have to shift it over, based
+                    //on the angle you are rotating:  http://social.msdn.microsoft.com/Forums/en-US/csharpgeneral/thread/a1e62e03-d732-444d-bb3d-6e7907fd5e16
 
-					gfx.TranslateTransform(-_paperWidth, -_paperHeight);
+                    gfx.TranslateTransform(-_paperWidth, -_paperHeight);
 
-					if (2 * idx <= _inputPdf.PageCount) //prevent asking for page 2 with a single page document (JH Oct 2010)
+                    if (2 * idx <= _inputPdf.PageCount) //prevent asking for page 2 with a single page document (JH Oct 2010)
                     {
                         //Left side of back
                         DrawSuperiorSide(gfx, 2 * idx);

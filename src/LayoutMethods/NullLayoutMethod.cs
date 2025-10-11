@@ -4,7 +4,7 @@ using PdfSharp.Drawing;
 using PdfSharp.Pdf;
 using PdfSharp.Pdf.IO;
 
-namespace PdfDroplet.LayoutMethods
+namespace DotImpose.LayoutMethods
 {
 	/// <summary>
 	/// Pass the input PDF file along to the output, optionally setting the TrimBox, ArtBox, and BleedBox

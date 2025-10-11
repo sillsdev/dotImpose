@@ -2,7 +2,7 @@
 using PdfSharp.Drawing;
 using PdfSharp.Pdf;
 
-namespace PdfDroplet.LayoutMethods
+namespace DotImpose.LayoutMethods
 {
 	/// <summary>
 	/// Layout an 8-page booklet that is printed 8up on one side of one sheet of page.  The output
@@ -41,28 +41,28 @@ namespace PdfDroplet.LayoutMethods
 					switch (idx)
 					{
 						case 1:
-							Draw8UpPageFor8PageBooklet(gfx, idx, _paperWidth / 4, _paperHeight / 2);		// Draw Bottom Inner Left
+							Draw8UpPageFor8PageBooklet(gfx, idx, _paperWidth / 4, _paperHeight / 2);        // Draw Bottom Inner Left
 							break;
 						case 2:
-							Draw8UpPageFor8PageBooklet(gfx, idx, _paperWidth / 2, _paperHeight / 2);		// Draw Bottom Inner Right
+							Draw8UpPageFor8PageBooklet(gfx, idx, _paperWidth / 2, _paperHeight / 2);        // Draw Bottom Inner Right
 							break;
 						case 3:
-							Draw8UpPageFor8PageBooklet(gfx, idx, (3 * _paperWidth) / 4, _paperHeight / 2);	// Draw Bottom Right Corner
+							Draw8UpPageFor8PageBooklet(gfx, idx, (3 * _paperWidth) / 4, _paperHeight / 2);  // Draw Bottom Right Corner
 							break;
 						case 4:
-							Draw8UpPageFor8PageBooklet(gfx, idx, (3 * _paperWidth) / 4, 0);		// Draw Top Right Corner
+							Draw8UpPageFor8PageBooklet(gfx, idx, (3 * _paperWidth) / 4, 0);     // Draw Top Right Corner
 							break;
 						case 5:
-							Draw8UpPageFor8PageBooklet(gfx, idx, _paperWidth / 2, 0);			// Draw Top Inner Right
+							Draw8UpPageFor8PageBooklet(gfx, idx, _paperWidth / 2, 0);           // Draw Top Inner Right
 							break;
 						case 6:
-							Draw8UpPageFor8PageBooklet(gfx, idx, _paperWidth / 4, 0);			// Draw Top Inner Left
+							Draw8UpPageFor8PageBooklet(gfx, idx, _paperWidth / 4, 0);           // Draw Top Inner Left
 							break;
 						case 7:
-							Draw8UpPageFor8PageBooklet(gfx, idx, 0, 0);							// Draw Top Left Corner
+							Draw8UpPageFor8PageBooklet(gfx, idx, 0, 0);                         // Draw Top Left Corner
 							break;
 						case 8:
-							Draw8UpPageFor8PageBooklet(gfx, idx, 0, _paperHeight / 2);			// Draw Bottom Left Corner
+							Draw8UpPageFor8PageBooklet(gfx, idx, 0, _paperHeight / 2);          // Draw Bottom Left Corner
 							break;
 					}
 				}

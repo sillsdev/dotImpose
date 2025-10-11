@@ -1,7 +1,7 @@
 using PdfSharp.Drawing;
 using PdfSharp.Pdf;
 using PdfSharp.Pdf.IO;
-using PdfDroplet.LayoutMethods;
+using DotImpose.LayoutMethods;
 
 namespace sillsdev.dotImpose.Tests;
 

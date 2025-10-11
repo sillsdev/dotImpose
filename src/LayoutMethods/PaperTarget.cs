@@ -1,7 +1,7 @@
 ﻿using PdfSharp.Drawing;
 using PdfSharp.Pdf;
 
-namespace PdfDroplet.LayoutMethods
+namespace DotImpose.LayoutMethods
 {
     public class PaperTarget
     {

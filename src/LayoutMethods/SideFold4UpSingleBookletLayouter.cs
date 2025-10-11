@@ -2,7 +2,7 @@
 using PdfSharp.Drawing;
 using PdfSharp.Pdf;
 
-namespace PdfDroplet.LayoutMethods
+namespace DotImpose.LayoutMethods
 {
 	/// <summary>
 	/// Layout a 4up booklet that will be folded horizontally and cut vertically.  This may be

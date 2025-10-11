@@ -1,7 +1,7 @@
 ﻿using PdfSharp.Drawing;
 using PdfSharp.Pdf;
 
-namespace PdfDroplet.LayoutMethods
+namespace DotImpose.LayoutMethods
 {
     /// <summary>
     /// TODO: separate out the calendar case from this (which is triggered when input width>height)
@@ -9,7 +9,7 @@ namespace PdfDroplet.LayoutMethods
     /// </summary>
     public class SideFoldBookletLayouter : LayoutMethod
     {
-        public SideFoldBookletLayouter():base("sideFoldBooklet.png")
+        public SideFoldBookletLayouter() : base("sideFoldBooklet.png")
         {
 
         }

@@ -2,7 +2,7 @@
 
 A .NET library for PDF imposition and layout operations, supporting various booklet and calendar layouts.
 
-[PdfDroplet](https://github.com/sillsdev/pdfdroplet) and [Bloom](https://github.com/BloomBooks/BloomDesktop) use this library for generating print-ready PDF layouts.
+[DotImpose](https://github.com/sillsdev/DotImpose) and [Bloom](https://github.com/BloomBooks/BloomDesktop) use this library for generating print-ready PDF layouts.
 
 ## Installation
 

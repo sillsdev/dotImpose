@@ -1,46 +1,47 @@
 name: Publish to NuGet
 
 on:
-    workflow_dispatch:
+  workflow_dispatch:
 
 jobs:
-    build:
-        uses: ./.github/workflows/build.yml
+  build:
+    uses: ./.github/workflows/build.yml
 
-    publish:
-        needs: build
-        runs-on: ubuntu-latest
-        # needs.build.outputs.version is the full version emitted by build.yml (steps.version)
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    # needs.build.outputs.version is the full version emitted by build.yml (steps.version)
 
-        steps:
-            - name: Download artifacts
-              uses: actions/download-artifact@v4
-              with:
-                  name: nuget-packages-${{ needs.build.outputs.version }}
-                  path: nupkg/
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: nuget-packages-${{ needs.build.outputs.version }}
+          path: nupkg/
 
-            - name: Setup .NET
-              uses: actions/setup-dotnet@v4
-              with:
-                  dotnet-version: 8.0.x
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
 
-            - name: Confirm publish
-              run: |
-                  echo "🚀 Publishing NuGet packages:"
-                  ls -la nupkg/
-                  echo ""
-                  echo "Version: ${{ needs.build.outputs.version }}"
-                  echo "Packages will be published to NuGet.org"
+      - name: Confirm publish
+        run: |
+          echo "🚀 Publishing NuGet packages:"
+          ls -la nupkg/
+          echo ""
+          echo "Version: ${{ needs.build.outputs.version }}"
+          echo "Packages will be published as UNLISTED to NuGet.org"
 
-            - name: Publish to NuGet
-              run: |
-                  for file in nupkg/*.nupkg; do
-                    echo "Publishing $file"
-                    dotnet nuget push "$file" --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
-                  done
+      - name: Publish to NuGet
+        run: |
+          for file in nupkg/*.nupkg; do
+            echo "Publishing $file (unlisted)"
+            dotnet nuget push "$file" --api-key ${{ secrets.SILLSDEV_PUBLISH_NUGET_ORG }} --source https://api.nuget.org/v3/index.json --skip-duplicate --no-service-endpoint
+          done
 
-            - name: Publish success
-              run: |
-                  echo "✅ Successfully published to NuGet!"
-                  echo "📦 Version: ${{ needs.build.outputs.version }}"
-                  echo "🔗 Check your package at: https://www.nuget.org/packages/sillsdev.dotImpose/"
+      - name: Publish success
+        run: |
+          echo "✅ Successfully published to NuGet (unlisted)!"
+          echo "📦 Version: ${{ needs.build.outputs.version }}"
+          echo "🔗 Check your package at: https://www.nuget.org/packages/sillsdev.dotImpose/"
+          echo "ℹ️ Package is unlisted - users need the exact version number to install it"

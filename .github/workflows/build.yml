@@ -93,3 +93,17 @@ jobs:
             output/Release/*.dll
             output/Release/*.pdb
             output/Release/*.deps.json
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.full_version }}
+          name: Release v${{ steps.version.outputs.full_version }}
+          draft: true
+          prerelease: false
+          generate_release_notes: true
+          files: |
+            nupkg/*.nupkg
+            output/Release/*.dll
+            output/Release/*.pdb
+            output/Release/*.deps.json

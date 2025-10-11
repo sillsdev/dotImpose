@@ -61,6 +61,9 @@ jobs:
           echo "Base version: $BASE_VERSION"
           echo "Full version: $FULL_VERSION"
 
+      - name: Clean nupkg directory
+        run: rm -rf nupkg/ && mkdir -p nupkg/
+
       - name: Restore dependencies
         run: dotnet restore src/DotImpose.csproj
 

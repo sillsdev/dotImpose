@@ -18,8 +18,8 @@
         <Title>PDF Imposition Library</Title>
         <Description>A .NET library for PDF imposition and layout operations, supporting various booklet and calendar layouts.</Description>
         <Authors>SIL International</Authors>
-        <PackageProjectUrl>https://github.com/sillsdev/imposition.net</PackageProjectUrl>
-        <RepositoryUrl>https://github.com/sillsdev/imposition.net</RepositoryUrl>
+        <PackageProjectUrl>https://github.com/sillsdev/dotImpose</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/sillsdev/dotImpose</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>

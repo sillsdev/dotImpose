@@ -53,8 +53,9 @@ jobs:
             exit 1
           fi
 
-          # Create version with run ID
-          FULL_VERSION="${BASE_VERSION}.${{ github.run_id }}"
+          # Create version with run number (not run_id which is too large)
+          # Use run_number which is smaller and fits in NuGet version constraints
+          FULL_VERSION="${BASE_VERSION}.${{ github.run_number }}"
           echo "base_version=$BASE_VERSION" >> $GITHUB_OUTPUT
           echo "full_version=$FULL_VERSION" >> $GITHUB_OUTPUT
           echo "Base version: $BASE_VERSION"

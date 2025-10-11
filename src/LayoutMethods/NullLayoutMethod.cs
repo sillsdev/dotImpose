@@ -12,19 +12,24 @@ namespace DotImpose.LayoutMethods
 	/// </summary>
 	public class NullLayoutMethod : LayoutMethod
 	{
+		/// <summary>
+		/// The bleed margin in millimeters.
+		/// </summary>
 		protected double _bleedMM;
 		private const double kBleedMicroDeltaMM = 0.01; // use for floating point comparisons instead of 0.0
 
 		/// <summary>
-		/// bleedMM is the amount in mm to offset the TrimBox et al. inside the MediaBox.  The default is 0mm
-		/// (TrimBox the same as the MediaBox).
+		/// Initializes a new instance of the NullLayoutMethod class.
 		/// </summary>
-		/// <param name="bleedMM"></param>
-		public NullLayoutMethod(double bleedMM = 0.0) : base("")
+		/// <param name="bleedMM">The amount in mm to offset the TrimBox et al. inside the MediaBox. The default is 0mm (TrimBox the same as the MediaBox).</param>
+		public NullLayoutMethod(double bleedMM = 0.0) : base("original", "Original")
 		{
 			_bleedMM = bleedMM;
 		}
 
+		/// <summary>
+		/// Performs the layout operation, optionally adding bleed margins and crop marks.
+		/// </summary>
 		public override void Layout(XPdfForm inputPdf, string inputPath, string outputPath, PaperTarget paperTarget, bool rightToLeft, bool showCropMarks)
 		{
 			if (!showCropMarks && Math.Abs(_bleedMM) < kBleedMicroDeltaMM)
@@ -92,6 +97,9 @@ namespace DotImpose.LayoutMethods
 			}
 		}
 
+		/// <summary>
+		/// Not implemented for NullLayoutMethod as it uses a different layout approach.
+		/// </summary>
 		protected override void LayoutInner(PdfDocument outputDocument, int numberOfSheetsOfPaper, int numberOfPageSlotsAvailable, int vacats)
 		{
 			throw new NotImplementedException();
@@ -107,15 +115,17 @@ namespace DotImpose.LayoutMethods
 			targetGraphicsPort.DrawImage(_inputPdf, sourceRect);
 		}
 
+		/// <summary>
+		/// Determines whether this layout method is enabled. Always returns true for NullLayoutMethod.
+		/// </summary>
 		public override bool GetIsEnabled(XPdfForm inputPdf)
 		{
 			return true;
 		}
-		public override string ToString()
-		{
-			return "Original";
-		}
 
+		/// <summary>
+		/// Gets a value indicating that this layout method is sensitive to page orientation.
+		/// </summary>
 		public override bool ImageIsSensitiveToOrientation
 		{
 			get { return true; }

@@ -3,12 +3,23 @@ using PdfSharp.Pdf;
 
 namespace DotImpose.LayoutMethods
 {
+    /// <summary>
+    /// Represents a target paper size for PDF output.
+    /// </summary>
     public class PaperTarget
     {
+        /// <summary>
+        /// Gets or sets the name of the paper target (e.g., "A4", "Letter").
+        /// </summary>
         public string Name;
         private XUnit _width;
         private XUnit _height;
 
+        /// <summary>
+        /// Initializes a new instance of the PaperTarget class.
+        /// </summary>
+        /// <param name="name">The name of the paper size.</param>
+        /// <param name="pageSize">The PDF page size specification.</param>
         public PaperTarget(string name, PdfSharp.PageSize pageSize)
         {
             Name = name;
@@ -20,8 +31,12 @@ namespace DotImpose.LayoutMethods
 
         }
 
-
-
+        /// <summary>
+        /// Gets the paper dimensions based on the input dimensions, adjusting for orientation.
+        /// </summary>
+        /// <param name="inputWidth">The width of the input PDF in pixels.</param>
+        /// <param name="inputHeight">The height of the input PDF in pixels.</param>
+        /// <returns>An XPoint containing the paper dimensions in points.</returns>
         public XPoint GetPaperDimensions(int inputWidth, int inputHeight)
         {
             if (inputHeight > inputWidth)
@@ -33,6 +48,11 @@ namespace DotImpose.LayoutMethods
                 return new XPoint(_width.Point, _height.Point); //landscape
             }
         }
+
+        /// <summary>
+        /// Returns a string representation of the paper target.
+        /// </summary>
+        /// <returns>The name of the paper target.</returns>
         public override string ToString()
         {
             return Name;

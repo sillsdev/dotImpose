@@ -25,22 +25,17 @@
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
         <PackageTags>pdf;imposition;layout;booklet;calendar</PackageTags>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        
         <!-- Generate XML documentation for IntelliSense -->
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
-        
         <!-- Include README in NuGet package -->
         <PackageReadmeFile>ReadMe.md</PackageReadmeFile>
-        
         <!-- Generate symbol package (.snupkg) for debugging -->
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-        
         <!-- Enable deterministic builds for reproducibility -->
         <Deterministic>true</Deterministic>
         <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
     </PropertyGroup>
-    
     <ItemGroup>
         <None Include="..\ReadMe.md" Pack="true" PackagePath="\" />
     </ItemGroup>

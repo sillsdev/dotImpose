@@ -9,17 +9,18 @@ namespace DotImpose.LayoutMethods
     /// </summary>
     public class CalendarLayouter : LayoutMethod
     {
+        /// <summary>
+        /// Initializes a new instance of the CalendarLayouter class.
+        /// </summary>
         public CalendarLayouter()
-            : base("calendar.png")
+            : base("calendar", "Calendar Fold")
         {
 
         }
 
-        public override string ToString()
-        {
-            return "Calendar Fold";
-        }
-
+        /// <summary>
+        /// Performs the inner layout logic for calendar fold layout.
+        /// </summary>
         protected override void LayoutInner(PdfDocument outputDocument, int numberOfSheetsOfPaper, int numberOfPageSlotsAvailable, int vacats)
         {
             XGraphics gfx;
@@ -66,6 +67,9 @@ namespace DotImpose.LayoutMethods
             }
         }
 
+        /// <summary>
+        /// Determines whether this layout method is enabled for the given input PDF. Enabled only for landscape orientation.
+        /// </summary>
         public override bool GetIsEnabled(XPdfForm inputPdf)
         {
             return IsLandscape(inputPdf);

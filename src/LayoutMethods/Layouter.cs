@@ -3,23 +3,70 @@ using PdfSharp.Pdf;
 
 namespace DotImpose.LayoutMethods
 {
+	/// <summary>
+	/// Abstract base class for PDF layout methods that rearrange pages for various printing and binding purposes.
+	/// </summary>
 	public abstract class LayoutMethod
 	{
-		private readonly string _imageName;
+		/// <summary>
+		/// Gets the identifier for this layout method (e.g., "cutBooklet", "sideFoldBooklet").
+		/// </summary>
+		public string Id { get; }
+
+		/// <summary>
+		/// Gets the English label for this layout method (e.g., "Cut and Stack", "Fold Booklet").
+		/// </summary>
+		public string EnglishLabel { get; }
+
+		/// <summary>
+		/// The width of the output paper.
+		/// </summary>
 		protected XUnit _paperWidth;
+
+		/// <summary>
+		/// The height of the output paper.
+		/// </summary>
 		protected XUnit _paperHeight;
+
+		/// <summary>
+		/// The input PDF form being processed.
+		/// </summary>
 		protected XPdfForm _inputPdf;
+
+		/// <summary>
+		/// Indicates whether the layout is for right-to-left languages.
+		/// </summary>
 		protected bool _rightToLeft;
+
+		/// <summary>
+		/// Indicates whether the layout is in calendar mode.
+		/// </summary>
 		protected bool _calendarMode;
+
+		/// <summary>
+		/// Indicates whether to show crop marks on the output.
+		/// </summary>
 		protected bool _showCropMarks;
 
+		/// <summary>
+		/// Distance in millimeters between trim box and media box for crop marks (6mm standard).
+		/// </summary>
 		public const double kMillimetersBetweenTrimAndMediaBox = 6; //I read that "3.175" is standard, but then the crop marks are barely visible. I'm concerned that if they aren't obvious, people might not understand what they are seeing, and be confused.
 
-		protected LayoutMethod(string imageName)
+		/// <summary>
+		/// Initializes a new instance of the LayoutMethod class.
+		/// </summary>
+		/// <param name="id">The identifier for this layout method.</param>
+		/// <param name="englishLabel">The English label for this layout method.</param>
+		protected LayoutMethod(string id, string englishLabel)
 		{
-			_imageName = imageName;
+			Id = id;
+			EnglishLabel = englishLabel;
 		}
 
+		/// <summary>
+		/// Gets a value indicating whether this layout method's output is affected by page orientation.
+		/// </summary>
 		public virtual bool ImageIsSensitiveToOrientation
 		{
 			get { return false; }
@@ -73,6 +120,10 @@ namespace DotImpose.LayoutMethods
 			outputDocument.Save(outputPath);
 		}
 
+		/// <summary>
+		/// Sets the paper size for the output document based on the paper target and input PDF dimensions.
+		/// </summary>
+		/// <param name="paperTarget">The target paper size specification.</param>
 		protected virtual void SetPaperSize(PaperTarget paperTarget)
 		{
 			var dimensions = paperTarget.GetPaperDimensions(_inputPdf.PixelWidth, _inputPdf.PixelHeight);
@@ -80,9 +131,20 @@ namespace DotImpose.LayoutMethods
 			_paperHeight = XUnit.FromPoint(dimensions.Y);
 		}
 
+		/// <summary>
+		/// Performs the actual page layout logic. Must be implemented by derived classes.
+		/// </summary>
+		/// <param name="outputDocument">The output PDF document.</param>
+		/// <param name="numberOfSheetsOfPaper">The number of sheets of paper needed.</param>
+		/// <param name="numberOfPageSlotsAvailable">The total number of page slots available.</param>
+		/// <param name="vacats">The number of vacant page slots.</param>
 		protected abstract void LayoutInner(PdfDocument outputDocument, int numberOfSheetsOfPaper, int numberOfPageSlotsAvailable, int vacats);
 
-
+		/// <summary>
+		/// Creates a new page in the output document and returns its graphics context.
+		/// </summary>
+		/// <param name="outputDocument">The output PDF document.</param>
+		/// <returns>The graphics context for the new page.</returns>
 		protected XGraphics GetGraphicsForNewPage(PdfDocument outputDocument)
 		{
 			XGraphics gfx;
@@ -118,6 +180,10 @@ namespace DotImpose.LayoutMethods
 			return gfx;
 		}
 
+		/// <summary>
+		/// Gets the PDF rectangle for the trim box with appropriate margins.
+		/// </summary>
+		/// <returns>The trim box rectangle.</returns>
 		protected PdfRectangle GetTrimBoxRectangle()
 		{
 			var xunitsBetweenTrimAndMediaBox = XUnit.FromMillimeter(kMillimetersBetweenTrimAndMediaBox);
@@ -125,11 +191,19 @@ namespace DotImpose.LayoutMethods
 			return new PdfRectangle(upperLeftTrimBoxCorner, new XSize(_paperWidth.Point, _paperHeight.Point));
 		}
 
+		/// <summary>
+		/// Gets the left edge position for the superior (first) page on a sheet.
+		/// Adjusts for right-to-left languages.
+		/// </summary>
 		protected double LeftEdgeForSuperiorPage
 		{
 			get { return _rightToLeft ? _paperWidth.Point / 2 : XUnit.FromPoint(0).Point; }
 		}
 
+		/// <summary>
+		/// Gets the left edge position for the inferior (second) page on a sheet.
+		/// Adjusts for right-to-left languages.
+		/// </summary>
 		protected double LeftEdgeForInferiorPage
 		{
 			get { return _rightToLeft ? XUnit.FromPoint(0).Point : _paperWidth.Point / 2; }
@@ -171,19 +245,38 @@ namespace DotImpose.LayoutMethods
 						 XUnit.FromPoint(lowerRightTrimBoxCorner.Y + xunitsBetweenTrimAndMediaBox.Point).Point);
 		}
 
-
+		/// <summary>
+		/// Determines whether this layout method is enabled for the given input PDF.
+		/// </summary>
+		/// <param name="inputPdf">The input PDF form to check.</param>
+		/// <returns>True if this layout method can be used with the input PDF; otherwise, false.</returns>
 		public abstract bool GetIsEnabled(XPdfForm inputPdf);
 
+		/// <summary>
+		/// Determines whether the input PDF is in landscape orientation.
+		/// </summary>
+		/// <param name="inputPdf">The input PDF form to check.</param>
+		/// <returns>True if the PDF is landscape; otherwise, false.</returns>
 		public static bool IsLandscape(XPdfForm inputPdf)
 		{
 			return inputPdf != null && inputPdf.PixelWidth > inputPdf.PixelHeight;
 		}
 
+		/// <summary>
+		/// Determines whether the input PDF is in portrait orientation.
+		/// </summary>
+		/// <param name="inputPdf">The input PDF form to check.</param>
+		/// <returns>True if the PDF is portrait; otherwise, false.</returns>
 		public static bool IsPortrait(XPdfForm inputPdf)
 		{
 			return inputPdf != null && inputPdf.PixelWidth < inputPdf.PixelHeight;
 		}
 
+		/// <summary>
+		/// Determines whether the input PDF has square pages.
+		/// </summary>
+		/// <param name="inputPdf">The input PDF form to check.</param>
+		/// <returns>True if the PDF has square pages; otherwise, false.</returns>
 		public static bool IsSquare(XPdfForm inputPdf)
 		{
 			return inputPdf != null && inputPdf.PixelWidth == inputPdf.PixelHeight;

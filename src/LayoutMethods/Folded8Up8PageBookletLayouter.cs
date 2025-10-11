@@ -17,20 +17,24 @@ namespace DotImpose.LayoutMethods
 	/// </remarks>
 	public class Folded8Up8PageBookletLayouter : LayoutMethod
 	{
-		public Folded8Up8PageBookletLayouter() : base("folded8Up8PageBooklet.png")
+		/// <summary>
+		/// Initializes a new instance of the Folded8Up8PageBookletLayouter class.
+		/// </summary>
+		public Folded8Up8PageBookletLayouter() : base("folded8Up8PageBooklet", "Fold/Cut 8Up 8 Page Booklet")
 		{
 		}
 
-		public override string ToString()
-		{
-			return "Fold/Cut 8Up 8 Page Booklet";
-		}
-
+		/// <summary>
+		/// Determines whether this layout method is enabled for the given input PDF. Enabled only for portrait orientation.
+		/// </summary>
 		public override bool GetIsEnabled(XPdfForm inputPdf)
 		{
 			return IsPortrait(inputPdf);
 		}
 
+		/// <summary>
+		/// Performs the inner layout logic for 8-up 8-page folded booklet layout.
+		/// </summary>
 		protected override void LayoutInner(PdfDocument outputDocument, int numberOfSheetsOfPaper, int numberOfPageSlotsAvailable, int vacats)
 		{
 			using (XGraphics gfx = GetGraphicsForNewPage(outputDocument))

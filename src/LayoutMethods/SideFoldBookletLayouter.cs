@@ -9,16 +9,17 @@ namespace DotImpose.LayoutMethods
     /// </summary>
     public class SideFoldBookletLayouter : LayoutMethod
     {
-        public SideFoldBookletLayouter() : base("sideFoldBooklet.png")
+        /// <summary>
+        /// Initializes a new instance of the SideFoldBookletLayouter class.
+        /// </summary>
+        public SideFoldBookletLayouter() : base("sideFoldBooklet", "Fold Booklet")
         {
 
         }
 
-        public override string ToString()
-        {
-            return "Fold Booklet";
-        }
-
+        /// <summary>
+        /// Performs the inner layout logic for side fold booklet layout.
+        /// </summary>
         protected override void LayoutInner(PdfDocument outputDocument, int numberOfSheetsOfPaper, int numberOfPageSlotsAvailable, int vacats)
         {
             XGraphics gfx;
@@ -59,6 +60,9 @@ namespace DotImpose.LayoutMethods
             }
         }
 
+        /// <summary>
+        /// Determines whether this layout method is enabled for the given input PDF. Enabled only for portrait orientation.
+        /// </summary>
         public override bool GetIsEnabled(XPdfForm inputPdf)
         {
             return IsPortrait(inputPdf);

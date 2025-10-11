@@ -9,20 +9,25 @@ namespace DotImpose.LayoutMethods
     /// </summary>
     public class CutLandscapeLayout : LayoutMethod
     {
-        public CutLandscapeLayout() : base("cutBooklet.png")
+        /// <summary>
+        /// Initializes a new instance of the CutLandscapeLayout class.
+        /// </summary>
+        public CutLandscapeLayout() : base("cutBooklet", "Cut & Stack")
         {
 
         }
-        public override string ToString()
-        {
-            return "Cut && Stack";
-        }
 
+        /// <summary>
+        /// Determines whether this layout method is enabled for the given input PDF. Enabled only for landscape orientation.
+        /// </summary>
         public override bool GetIsEnabled(XPdfForm inputPdf)
         {
             return IsLandscape(inputPdf);
         }
 
+        /// <summary>
+        /// Performs the inner layout logic for cut landscape layout.
+        /// </summary>
         protected override void LayoutInner(PdfDocument outputDocument, int numberOfSheetsOfPaper, int numberOfPageSlotsAvailable, int vacats)
         {
             XGraphics gfx;

@@ -19,14 +19,12 @@ namespace DotImpose.LayoutMethods
         // 42.5197pt = 15mm.  This centers 6up 13cm square pages vertically on A3 paper [(420-390)/2 = 15]
         private const double TopMargin = 42.5197;
 
-        public Square6UpBookletLayouter() : base("square6UpBooklet.png")
+        /// <summary>
+        /// Initializes a new instance of the Square6UpBookletLayouter class.
+        /// </summary>
+        public Square6UpBookletLayouter() : base("square6UpBooklet", "Fold/Cut 6Up Square Booklet")
         {
 
-        }
-
-        public override string ToString()
-        {
-            return "Fold/Cut 6Up Square Booklet";
         }
 
         /// <summary>
@@ -40,6 +38,9 @@ namespace DotImpose.LayoutMethods
             _paperHeight = XUnit.FromPoint(size.Y);
         }
 
+        /// <summary>
+        /// Performs the inner layout logic for 6-up square booklet layout.
+        /// </summary>
         protected override void LayoutInner(PdfDocument outputDocument, int numberOfSheetsOfPaper, int numberOfPageSlotsAvailable, int vacats)
         {
             for (var idx = 1; idx <= numberOfSheetsOfPaper; idx++)
@@ -116,6 +117,9 @@ namespace DotImpose.LayoutMethods
             gfx.DrawImage(_inputPdf, box);
         }
 
+        /// <summary>
+        /// Determines whether this layout method is enabled for the given input PDF. Enabled only for square pages.
+        /// </summary>
         public override bool GetIsEnabled(XPdfForm inputPdf)
         {
             // Available only for square input pages.

@@ -9,14 +9,12 @@ namespace DotImpose.LayoutMethods
 	/// </summary>
 	public class SideFold4UpBookletLayouter : LayoutMethod
 	{
-		public SideFold4UpBookletLayouter() : base("sideFoldCut4UpBooklet.png")
+		/// <summary>
+		/// Initializes a new instance of the SideFold4UpBookletLayouter class.
+		/// </summary>
+		public SideFold4UpBookletLayouter() : base("sideFoldCut4UpBooklet", "Fold/Cut 4Up Booklet")
 		{
 
-		}
-
-		public override string ToString()
-		{
-			return "Fold/Cut 4Up Booklet";
 		}
 
 		/// <summary>
@@ -30,6 +28,9 @@ namespace DotImpose.LayoutMethods
 			_paperHeight = XUnit.FromPoint(size.Y);
 		}
 
+		/// <summary>
+		/// Performs the inner layout logic for 4-up side fold booklet layout.
+		/// </summary>
 		protected override void LayoutInner(PdfDocument outputDocument, int numberOfSheetsOfPaper, int numberOfPageSlotsAvailable, int vacats)
 		{
 			for (var idx = 1; idx <= numberOfSheetsOfPaper; idx++)
@@ -84,6 +85,9 @@ namespace DotImpose.LayoutMethods
 			gfx.DrawImage(_inputPdf, box);
 		}
 
+		/// <summary>
+		/// Determines whether this layout method is enabled for the given input PDF. Enabled for both portrait and landscape orientations.
+		/// </summary>
 		public override bool GetIsEnabled(XPdfForm inputPdf)
 		{
 			return IsPortrait(inputPdf) || IsLandscape(inputPdf);

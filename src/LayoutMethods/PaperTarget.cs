@@ -32,6 +32,19 @@ namespace DotImpose.LayoutMethods
         }
 
         /// <summary>
+        /// Initializes a new instance of the PaperTarget class with a custom paper size.
+        /// </summary>
+        /// <param name="name">The name of the paper size.</param>
+        /// <param name="inchWidth">The paper width in inches.</param>
+        /// <param name="inchHeight">The paper height in inches.</param>
+        public PaperTarget(string name, double inchWidth, double inchHeight)
+        {
+            Name = name;
+            _width = XUnit.FromInch(inchWidth);
+            _height = XUnit.FromInch(inchHeight);
+        }
+
+        /// <summary>
         /// Gets the paper dimensions based on the input dimensions, adjusting for orientation.
         /// </summary>
         /// <param name="inputWidth">The width of the input PDF in pixels.</param>

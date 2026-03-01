@@ -66,16 +66,14 @@ namespace DotImpose.LayoutMethods
 
         private void DrawBottom(XGraphics gfx, int pageNumber /* NB: page number is one-based*/)
         {
-            _inputPdf.PageNumber = pageNumber;
             XRect box = new XRect(0, _paperHeight / 2, _paperWidth, _paperHeight / 2);
-            gfx.DrawImage(_inputPdf, box);
+            DrawPageUsingSourceTrimIntent(gfx, pageNumber, box);
         }
 
         private void DrawTop(XGraphics gfx, int pageNumber)
         {
-            _inputPdf.PageNumber = pageNumber;
             XRect box = new XRect(0, 0, _paperWidth, _paperHeight / 2);
-            gfx.DrawImage(_inputPdf, box);
+            DrawPageUsingSourceTrimIntent(gfx, pageNumber, box);
         }
 
     }

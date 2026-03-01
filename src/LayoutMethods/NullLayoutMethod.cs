@@ -41,6 +41,7 @@ namespace DotImpose.LayoutMethods
 				//_rightToLeft = rightToLeft;
 				_inputPdf = inputPdf;
 				_showCropMarks = showCropMarks;
+				EnsureSourcePageBoxesLoaded(inputPath);
 
 				PdfDocument outputDocument = new PdfDocument();
 				outputDocument.PageLayout = PdfPageLayout.SinglePage;
@@ -56,44 +57,84 @@ namespace DotImpose.LayoutMethods
 
 				for (int idx = 1; idx <= _inputPdf.PageCount; idx++)
 				{
-					using (XGraphics gfx = GetGraphicsForNewPage(outputDocument))
+					using (XGraphics gfx = GetGraphicsForNullPage(outputDocument, idx))
 					{
 						DrawPage(gfx, idx);
 					}
 				}
 
-				if (Math.Abs(_bleedMM) > kBleedMicroDeltaMM)
+				var tempPath = Path.ChangeExtension(Path.Combine(Path.GetDirectoryName(outputPath),
+					Path.GetRandomFileName()), "pdf");
+				outputDocument.Save(tempPath);
+				outputDocument.Close();
+				outputDocument = PdfReader.Open(tempPath, PdfDocumentOpenMode.Import);
+
+				var cropMarkMargin = _showCropMarks
+					? XUnit.FromMillimeter(kMillimetersBetweenTrimAndMediaBox)
+					: XUnit.FromPoint(0);
+
+				var pageIndex = 1;
+
+				PdfDocument realOutput = new PdfDocument();
+				realOutput.PageLayout = PdfPageLayout.SinglePage;
+				foreach (var page in outputDocument.Pages)
 				{
-					var tempPath = Path.ChangeExtension(Path.Combine(Path.GetDirectoryName(outputPath),
-						Path.GetRandomFileName()), "pdf");
-					outputDocument.Save(tempPath);
-					outputDocument.Close();
-					outputDocument = PdfReader.Open(tempPath, PdfDocumentOpenMode.Import);
-					var bleedMargin = new XUnit(_bleedMM, XGraphicsUnit.Millimeter);
-					PdfDocument realOutput = new PdfDocument();
-					realOutput.PageLayout = PdfPageLayout.SinglePage;
-					var trimLocation = new XPoint(bleedMargin.Point, bleedMargin.Point);
-					foreach (var page in outputDocument.Pages)
-					{
-						var trimBox = new PdfRectangle(trimLocation, new XSize(page.MediaBox.Width - 2 * bleedMargin.Point, page.MediaBox.Height - 2 * bleedMargin.Point));
-						// All of the boxes start out the same size: MediaBox, CropBox, BleedBox, ArtBox, and TrimBox.
-						// MediaBox is presumably the physical paper size.
-						// Set CropBox the same as MediaBox.  CropBox limits what you see in Adobe Acrobat Reader DC and even Acrobat Pro.
-						// Also set BleedBox the same as MediaBox.  See https://i0.wp.com/makingcomics.spiltink.org/wp-content/uploads/2015/05/averageamericancomicsized.jpg.
-						page.BleedBox = page.MediaBox;
-						page.CropBox = page.MediaBox;
-						page.ArtBox = trimBox;
-						page.TrimBox = trimBox;
-						realOutput.AddPage(page);
-					}
-					outputDocument.Close();
-					File.Delete(tempPath);
-					realOutput.Save(outputPath);
+					GetFinalBoxRectangles(pageIndex, cropMarkMargin, out var trimBoxRect, out var bleedBoxRect);
+					var trimBox = ToPdfRectangle(trimBoxRect);
+					var bleedBox = ToPdfRectangle(bleedBoxRect);
+
+					// Set CropBox the same as MediaBox.  CropBox limits what you see in Adobe Acrobat Reader DC and even Acrobat Pro.
+					page.BleedBox = bleedBox;
+					page.CropBox = page.MediaBox;
+					page.ArtBox = trimBox;
+					page.TrimBox = trimBox;
+					realOutput.AddPage(page);
+					pageIndex++;
 				}
-				else
-				{
-					outputDocument.Save(outputPath);
-				}
+				outputDocument.Close();
+				File.Delete(tempPath);
+				realOutput.Save(outputPath);
+			}
+		}
+
+		private XGraphics GetGraphicsForNullPage(PdfDocument outputDocument, int pageNumber)
+		{
+			if (!_showCropMarks)
+				return GetGraphicsForNewPage(outputDocument);
+
+			var page = outputDocument.AddPage();
+			var cropMarkMargin = XUnit.FromMillimeter(kMillimetersBetweenTrimAndMediaBox);
+			page.Width = XUnit.FromPoint(_paperWidth.Point + 2 * cropMarkMargin.Point);
+			page.Height = XUnit.FromPoint(_paperHeight.Point + 2 * cropMarkMargin.Point);
+
+			GetFinalBoxRectangles(pageNumber, cropMarkMargin, out var trimBoxRect, out var bleedBoxRect);
+			page.TrimBox = ToPdfRectangle(trimBoxRect);
+			page.BleedBox = ToPdfRectangle(bleedBoxRect);
+			page.CropBox = page.MediaBox;
+
+			var gfx = XGraphics.FromPdfPage(page);
+			DrawCropMarks(page, gfx, cropMarkMargin);
+			gfx.TranslateTransform(cropMarkMargin.Point, cropMarkMargin.Point);
+			return gfx;
+		}
+
+		private void GetFinalBoxRectangles(int pageNumber, XUnit cropMarkMargin, out XRect trimBoxRect, out XRect bleedBoxRect)
+		{
+			var sourceBoxes = GetSourcePageBoxes(pageNumber);
+			trimBoxRect = sourceBoxes.TrimBox;
+			bleedBoxRect = sourceBoxes.BleedBox;
+
+			// Preserve explicit source trim intent; bleedMM is only used to synthesize trim when no trim box exists.
+			if (Math.Abs(_bleedMM) > kBleedMicroDeltaMM && !sourceBoxes.HasExplicitTrimBox)
+			{
+				var bleedInset = XUnit.FromMillimeter(_bleedMM);
+				trimBoxRect = InsetBox(bleedBoxRect, bleedInset.Point);
+			}
+
+			if (cropMarkMargin.Point > 0)
+			{
+				trimBoxRect = OffsetBox(trimBoxRect, cropMarkMargin.Point, cropMarkMargin.Point);
+				bleedBoxRect = OffsetBox(bleedBoxRect, cropMarkMargin.Point, cropMarkMargin.Point);
 			}
 		}
 

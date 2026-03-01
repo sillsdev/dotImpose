@@ -85,15 +85,12 @@ namespace DotImpose.LayoutMethods
                     leftEdge = (_paperWidth / 2) - _inputPdf.PointWidth;
                 boxSize = _inputPdf.PointWidth;
             }
-            _inputPdf.PageNumber = pageNumber;
             var box = new XRect(leftEdge, TopMargin, boxSize, boxSize);
-            gfx.DrawImage(_inputPdf, box);
-            _inputPdf.PageNumber = pageNumber;
+            DrawPageUsingSourceTrimIntent(gfx, pageNumber, box);
             box = new XRect(leftEdge, boxSize + TopMargin, boxSize, boxSize);
-            gfx.DrawImage(_inputPdf, box);
-            _inputPdf.PageNumber = pageNumber;
+            DrawPageUsingSourceTrimIntent(gfx, pageNumber, box);
             box = new XRect(leftEdge, 2 * boxSize + TopMargin, boxSize, boxSize);
-            gfx.DrawImage(_inputPdf, box);
+            DrawPageUsingSourceTrimIntent(gfx, pageNumber, box);
         }
 
         private void DrawSuperiorSide(XGraphics gfx, int pageNumber)
@@ -106,15 +103,12 @@ namespace DotImpose.LayoutMethods
                     leftEdge = (_paperWidth / 2) - _inputPdf.PointWidth;
                 boxSize = _inputPdf.PointWidth;
             }
-            _inputPdf.PageNumber = pageNumber;
             var box = new XRect(leftEdge, TopMargin, boxSize, boxSize);
-            gfx.DrawImage(_inputPdf, box);
-            _inputPdf.PageNumber = pageNumber;
+            DrawPageUsingSourceTrimIntent(gfx, pageNumber, box);
             box = new XRect(leftEdge, boxSize + TopMargin, boxSize, boxSize);
-            gfx.DrawImage(_inputPdf, box);
-            _inputPdf.PageNumber = pageNumber;
+            DrawPageUsingSourceTrimIntent(gfx, pageNumber, box);
             box = new XRect(leftEdge, 2 * boxSize + TopMargin, boxSize, boxSize);
-            gfx.DrawImage(_inputPdf, box);
+            DrawPageUsingSourceTrimIntent(gfx, pageNumber, box);
         }
 
         /// <summary>

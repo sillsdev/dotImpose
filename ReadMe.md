@@ -55,7 +55,29 @@ Each layout method has an `Id` property (for programmatic use) and an `EnglishLa
 
 - Multiple PDF imposition layouts
 - Support for right-to-left languages
-- Crop marks for commercial printing
+- Full-bleed aware imposition, crop marks.
+
+## Full Bleed
+
+DotImpose supports full-bleed workflows where the client application provides source PDFs with the expected PDF page boxes already defined (`TrimBox`, `BleedBox`, etc.).
+
+### NullLayoutMethod
+
+- Preserves source page content and source box geometry as-is (see note about Crop Marks below).
+
+### SideFoldBookletLayouter
+
+- Uses source `TrimBox` as the panel trim intent for each imposed page panel.
+- Preserves source bleed/trim intent so cutoff matches source expectations.
+- Does not impose a special fold-edge clipping rule on your behalf.
+- If you want content to print all the way to the fold, define source boxes accordingly (for example by setting trim/bleed so that edge is treated as printable).
+- If you want content to stop at the fold, define source boxes so that edge trims there.
+
+The output page boxes describe the final imposed sheet, while source box definitions remain the authority for panel-level cutoff intent.
+
+### Crop Marks
+
+When crop marks are enabled, DotImpose adds marks outside the final trim area. Crop marks do not change trim or bleed calculations; if needed, DotImpose will expand the `MediaBox` to make room for them.
 
 ## Building
 

@@ -165,6 +165,37 @@ public class ImpositionTests : IDisposable
         Assert.False(layoutMethod.GetIsEnabled(landscapeInputPdf));
     }
 
+    [Fact]
+    public void SideFoldBooklet_WithCropMarks_KeepsImposedSheetTrimSize()
+    {
+        var noCropOutputPath = Path.Combine(_outputDirectory, "sidefold-no-cropmarks.pdf");
+        var cropOutputPath = Path.Combine(_outputDirectory, "sidefold-with-cropmarks.pdf");
+        var paperTarget = new PaperTarget("A4", PdfSharp.PageSize.A4);
+
+        var noCropInputPdf = XPdfForm.FromFile(_testPdfPath);
+        var cropInputPdf = XPdfForm.FromFile(_testPdfPath);
+
+        new SideFoldBookletLayouter().Layout(noCropInputPdf, _testPdfPath, noCropOutputPath, paperTarget, false, false);
+        new SideFoldBookletLayouter().Layout(cropInputPdf, _testPdfPath, cropOutputPath, paperTarget, false, true);
+
+        using var noCropOutputDoc = PdfReader.Open(noCropOutputPath, PdfDocumentOpenMode.Import);
+        using var cropOutputDoc = PdfReader.Open(cropOutputPath, PdfDocumentOpenMode.Import);
+
+        var noCropPage = noCropOutputDoc.Pages[0];
+        var cropPage = cropOutputDoc.Pages[0];
+        var cropTrim = cropPage.TrimBox.ToXRect();
+        var cropBleed = cropPage.BleedBox.ToXRect();
+
+        Assert.InRange(Math.Abs(noCropPage.Width.Point - cropTrim.Width), 0.0, 0.5);
+        Assert.InRange(Math.Abs(noCropPage.Height.Point - cropTrim.Height), 0.0, 0.5);
+        Assert.InRange(Math.Abs(cropBleed.Width - cropTrim.Width), 0.0, 0.5);
+        Assert.InRange(Math.Abs(cropBleed.Height - cropTrim.Height), 0.0, 0.5);
+
+        var expectedMarginIncrease = XUnit.FromMillimeter(2 * LayoutMethod.kMillimetersBetweenTrimAndMediaBox).Point;
+        Assert.InRange(cropPage.Width.Point - noCropPage.Width.Point, expectedMarginIncrease - 0.5, expectedMarginIncrease + 0.5);
+        Assert.InRange(cropPage.Height.Point - noCropPage.Height.Point, expectedMarginIncrease - 0.5, expectedMarginIncrease + 0.5);
+    }
+
     #endregion
 
     #region CalendarLayouter Tests

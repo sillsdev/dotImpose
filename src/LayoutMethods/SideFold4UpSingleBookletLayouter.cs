@@ -115,30 +115,26 @@ namespace DotImpose.LayoutMethods
 		/// </summary>
 		private void DrawTopLeftCorner(XGraphics gfx, int pageNumber /* NB: page number is one-based*/)
 		{
-			_inputPdf.PageNumber = pageNumber;
 			var box = new XRect(LeftEdgeForSuperiorPage, 0, _paperWidth / 2, _paperHeight / 2);
-			gfx.DrawImage(_inputPdf, box);
+			DrawPageUsingSourceTrimIntent(gfx, pageNumber, box);
 		}
 
 		private void DrawBottomLeftCorner(XGraphics gfx, int pageNumber /* NB: page number is one-based*/)
 		{
-			_inputPdf.PageNumber = pageNumber;
 			var box = new XRect(LeftEdgeForSuperiorPage, _paperHeight / 2, _paperWidth / 2, _paperHeight / 2);
-			gfx.DrawImage(_inputPdf, box);
+			DrawPageUsingSourceTrimIntent(gfx, pageNumber, box);
 		}
 
 		private void DrawTopRightCorner(XGraphics gfx, int pageNumber /* NB: page number is one-based*/)
 		{
-			_inputPdf.PageNumber = pageNumber;
 			var box = new XRect(LeftEdgeForInferiorPage, 0, _paperWidth / 2, _paperHeight / 2);
-			gfx.DrawImage(_inputPdf, box);
+			DrawPageUsingSourceTrimIntent(gfx, pageNumber, box);
 		}
 
 		private void DrawBottomRightCorner(XGraphics gfx, int pageNumber /* NB: page number is one-based*/)
 		{
-			_inputPdf.PageNumber = pageNumber;
 			var box = new XRect(LeftEdgeForInferiorPage, _paperHeight / 2, _paperWidth / 2, _paperHeight / 2);
-			gfx.DrawImage(_inputPdf, box);
+			DrawPageUsingSourceTrimIntent(gfx, pageNumber, box);
 		}
 
 		/// <summary>

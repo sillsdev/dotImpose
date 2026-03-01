@@ -67,22 +67,18 @@ namespace DotImpose.LayoutMethods
 
 		private void DrawInferiorSide(XGraphics gfx, int pageNumber)
 		{
-			_inputPdf.PageNumber = pageNumber;
 			var box = new XRect(LeftEdgeForInferiorPage, 0, _paperWidth / 2, _paperHeight / 2);
-			gfx.DrawImage(_inputPdf, box);
-			_inputPdf.PageNumber = pageNumber;
+			DrawPageUsingSourceTrimIntent(gfx, pageNumber, box);
 			box = new XRect(LeftEdgeForInferiorPage, _paperHeight / 2, _paperWidth / 2, _paperHeight / 2);
-			gfx.DrawImage(_inputPdf, box);
+			DrawPageUsingSourceTrimIntent(gfx, pageNumber, box);
 		}
 
 		private void DrawSuperiorSide(XGraphics gfx, int pageNumber)
 		{
-			_inputPdf.PageNumber = pageNumber;
 			var box = new XRect(LeftEdgeForSuperiorPage, 0, _paperWidth / 2, _paperHeight / 2);
-			gfx.DrawImage(_inputPdf, box);
-			_inputPdf.PageNumber = pageNumber;
+			DrawPageUsingSourceTrimIntent(gfx, pageNumber, box);
 			box = new XRect(LeftEdgeForSuperiorPage, _paperHeight / 2, _paperWidth / 2, _paperHeight / 2);
-			gfx.DrawImage(_inputPdf, box);
+			DrawPageUsingSourceTrimIntent(gfx, pageNumber, box);
 		}
 
 		/// <summary>

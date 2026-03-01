@@ -1,5 +1,8 @@
 name: Build and Test
 
+permissions:
+  contents: write
+
 on:
   push:
     branches: [main, master]
@@ -98,6 +101,7 @@ jobs:
             output/Release/*.deps.json
 
       - name: Create GitHub Release
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.version.outputs.full_version }}

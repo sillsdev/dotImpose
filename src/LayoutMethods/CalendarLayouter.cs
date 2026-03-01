@@ -80,13 +80,12 @@ namespace DotImpose.LayoutMethods
         /// With the landscape, this is the bottom half.
         private void DrawInferiorSide(XGraphics gfx, int pageNumber /* NB: page number is one-based*/)
         {
-            _inputPdf.PageNumber = pageNumber;
             XRect box;
             if (_inputPdf.PixelWidth > _inputPdf.PixelHeight)//landscape calendar
                 box = new XRect(0, _paperHeight / 2, _paperWidth, _paperHeight / 2);
             else
                 box = new XRect(LeftEdgeForInferiorPage, 0, _paperWidth / 2, _paperHeight);
-            gfx.DrawImage(_inputPdf, box);
+            DrawPageUsingSourceTrimIntent(gfx, pageNumber, box);
         }
 
         /// <summary>
@@ -95,13 +94,12 @@ namespace DotImpose.LayoutMethods
         /// </summary>
         private void DrawSuperiorSide(XGraphics gfx, int pageNumber)
         {
-            _inputPdf.PageNumber = pageNumber;
             XRect box;
             if (_inputPdf.PixelWidth > _inputPdf.PixelHeight)//landscape calendar
                 box = new XRect(0, 0, _paperWidth, _paperHeight / 2);
             else
                 box = new XRect(LeftEdgeForSuperiorPage, 0, _paperWidth / 2, _paperHeight);
-            gfx.DrawImage(_inputPdf, box);
+            DrawPageUsingSourceTrimIntent(gfx, pageNumber, box);
 
         }
 

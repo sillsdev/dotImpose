@@ -69,13 +69,16 @@ namespace DotImpose.LayoutMethods
 					outputDocument.Save(tempPath);
 					outputDocument.Close();
 					outputDocument = PdfReader.Open(tempPath, PdfDocumentOpenMode.Import);
-					var bleedMargin = new XUnit(_bleedMM, XGraphicsUnit.Millimeter);
+					var trimInsetMillimeters = _bleedMM;
+					if (_showCropMarks)
+						trimInsetMillimeters += kMillimetersBetweenTrimAndMediaBox;
+					var trimInset = new XUnit(trimInsetMillimeters, XGraphicsUnit.Millimeter);
 					PdfDocument realOutput = new PdfDocument();
 					realOutput.PageLayout = PdfPageLayout.SinglePage;
-					var trimLocation = new XPoint(bleedMargin.Point, bleedMargin.Point);
+					var trimLocation = new XPoint(trimInset.Point, trimInset.Point);
 					foreach (var page in outputDocument.Pages)
 					{
-						var trimBox = new PdfRectangle(trimLocation, new XSize(page.MediaBox.Width - 2 * bleedMargin.Point, page.MediaBox.Height - 2 * bleedMargin.Point));
+						var trimBox = new PdfRectangle(trimLocation, new XSize(page.MediaBox.Width - 2 * trimInset.Point, page.MediaBox.Height - 2 * trimInset.Point));
 						// All of the boxes start out the same size: MediaBox, CropBox, BleedBox, ArtBox, and TrimBox.
 						// MediaBox is presumably the physical paper size.
 						// Set CropBox the same as MediaBox.  CropBox limits what you see in Adobe Acrobat Reader DC and even Acrobat Pro.

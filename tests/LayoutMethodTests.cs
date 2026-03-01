@@ -89,6 +89,32 @@ public class LayoutMethodTests : IDisposable
     }
 
     [Fact]
+    public void NullLayoutMethod_WithBleedAndCropMarks_UsesExpectedTrimSize()
+    {
+        var singlePageInput = Path.Combine(_outputDirectory, "full-bleed-input.pdf");
+        using (var document = new PdfDocument())
+        {
+            var page = document.AddPage();
+            page.Width = XUnit.FromMillimeter(216);
+            page.Height = XUnit.FromMillimeter(303);
+            document.Save(singlePageInput);
+        }
+
+        var layoutMethod = new NullLayoutMethod(bleedMM: 3.0);
+        var outputPath = Path.Combine(_outputDirectory, "null-bleed-cropmarks-output.pdf");
+        var inputPdf = XPdfForm.FromFile(singlePageInput);
+        var paperTarget = new PaperTarget("A4", PdfSharp.PageSize.A4);
+
+        layoutMethod.Layout(inputPdf, singlePageInput, outputPath, paperTarget, false, true);
+
+        Assert.True(File.Exists(outputPath));
+        using var outputDoc = PdfReader.Open(outputPath, PdfDocumentOpenMode.Import);
+        var trimBox = outputDoc.Pages[0].TrimBox.ToXRect();
+        Assert.Equal(210, XUnit.FromPoint(trimBox.Width).Millimeter, 1);
+        Assert.Equal(297, XUnit.FromPoint(trimBox.Height).Millimeter, 1);
+    }
+
+    [Fact]
     public void SideFoldBookletLayouter_CreatesCorrectNumberOfPages()
     {
         // Arrange

@@ -1,7 +1,7 @@
 name: Build and Test
 
 permissions:
-  contents: write
+  contents: read
 
 on:
   push:
@@ -100,17 +100,36 @@ jobs:
             output/Release/*.pdb
             output/Release/*.deps.json
 
+  create-release:
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download package artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: nuget-packages-${{ needs.build.outputs.version }}${{ inputs.artifact-name-suffix }}
+          path: release-artifacts/nupkg
+
+      - name: Download compiled binaries artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: binaries-${{ needs.build.outputs.version }}${{ inputs.artifact-name-suffix }}
+          path: release-artifacts/output
+
       - name: Create GitHub Release
-        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ steps.version.outputs.full_version }}
-          name: Release v${{ steps.version.outputs.full_version }}
+          tag_name: v${{ needs.build.outputs.version }}
+          name: Release v${{ needs.build.outputs.version }}
           draft: true
           prerelease: false
           generate_release_notes: true
           files: |
-            nupkg/*.nupkg
-            output/Release/*.dll
-            output/Release/*.pdb
-            output/Release/*.deps.json
+            release-artifacts/nupkg/*.nupkg
+            release-artifacts/output/*.dll
+            release-artifacts/output/*.pdb
+            release-artifacts/output/*.deps.json

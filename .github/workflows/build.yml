@@ -9,10 +9,26 @@ on:
   pull_request:
     branches: [main, master]
   workflow_dispatch:
+    inputs:
+      artifact-name-suffix:
+        description: "Suffix for artifact names"
+        required: false
+        default: ""
+        type: string
+      version-suffix:
+        description: "Optional SemVer prerelease suffix (example: test)"
+        required: false
+        default: ""
+        type: string
   workflow_call:
     inputs:
       artifact-name-suffix:
         description: "Suffix for artifact names"
+        required: false
+        default: ""
+        type: string
+      version-suffix:
+        description: "Optional SemVer prerelease suffix (example: test)"
         required: false
         default: ""
         type: string
@@ -58,7 +74,11 @@ jobs:
 
           # Create version with run number (not run_id which is too large)
           # Use run_number which is smaller and fits in NuGet version constraints
+          VERSION_SUFFIX="${{ inputs.version-suffix || '' }}"
           FULL_VERSION="${BASE_VERSION}.${{ github.run_number }}"
+          if [ -n "$VERSION_SUFFIX" ]; then
+            FULL_VERSION="${FULL_VERSION}-${VERSION_SUFFIX}"
+          fi
           echo "base_version=$BASE_VERSION" >> $GITHUB_OUTPUT
           echo "full_version=$FULL_VERSION" >> $GITHUB_OUTPUT
           echo "Base version: $BASE_VERSION"

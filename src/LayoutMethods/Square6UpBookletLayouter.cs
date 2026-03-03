@@ -16,8 +16,10 @@ namespace DotImpose.LayoutMethods
     /// </remarks>
     public class Square6UpBookletLayouter : LayoutMethod
     {
-        // 42.5197pt = 15mm.  This centers 6up 13cm square pages vertically on A3 paper [(420-390)/2 = 15]
-        private const double TopMargin = 42.5197;
+        private XRect[] _leftColumnTrimBoxes = new XRect[3];
+        private XRect[] _rightColumnTrimBoxes = new XRect[3];
+        private XRect _sheetTrimBox;
+        private double[] _horizontalCutGuideYs = Array.Empty<double>();
 
         /// <summary>
         /// Initializes a new instance of the Square6UpBookletLayouter class.
@@ -36,6 +38,32 @@ namespace DotImpose.LayoutMethods
             var size = paperTarget.GetPaperDimensions(_inputPdf.PixelHeight, _inputPdf.PixelWidth);
             _paperWidth = XUnit.FromPoint(size.X);
             _paperHeight = XUnit.FromPoint(size.Y);
+
+            InitializePanelGeometry();
+        }
+
+        /// <summary>
+        /// Gets the sheet-level trim box spanning the union of the 2x3 panel trim boxes.
+        /// </summary>
+        protected override XRect GetSheetTrimBoxInPaperCoordinates()
+        {
+            return _sheetTrimBox.Width > 0 && _sheetTrimBox.Height > 0
+                ? _sheetTrimBox
+                : base.GetSheetTrimBoxInPaperCoordinates();
+        }
+
+        private double GetMinimumSourceTrimSize()
+        {
+            var minTrimSize = double.MaxValue;
+            for (var pageNumber = 1; pageNumber <= _inputPdf.PageCount; pageNumber++)
+            {
+                var trimBox = GetSourcePageBoxes(pageNumber).TrimBox;
+                var trimSize = Math.Min(trimBox.Width, trimBox.Height);
+                if (trimSize > 0)
+                    minTrimSize = Math.Min(minTrimSize, trimSize);
+            }
+
+            return minTrimSize == double.MaxValue ? 0 : minTrimSize;
         }
 
         /// <summary>
@@ -57,6 +85,9 @@ namespace DotImpose.LayoutMethods
 
                     //Right side of the front
                     DrawInferiorSide(gfx, 2 * idx - 1);
+
+                    if (_showCropMarks)
+                        DrawSideCutGuides(gfx);
                 }
 
                 // Back page of a sheet
@@ -71,44 +102,121 @@ namespace DotImpose.LayoutMethods
                         vacats -= 1;
                     else
                         DrawInferiorSide(gfx, numberOfPageSlotsAvailable + 1 - 2 * idx);
+
+                    if (_showCropMarks)
+                        DrawSideCutGuides(gfx);
                 }
             }
         }
 
         private void DrawInferiorSide(XGraphics gfx, int pageNumber)
         {
-            var leftEdge = LeftEdgeForInferiorPage;
-            var boxSize = _paperWidth / 2;
-            if (_inputPdf.PointWidth < _paperWidth / 2)
-            {
-                if (Math.Abs(leftEdge) < 0.01)
-                    leftEdge = (_paperWidth / 2) - _inputPdf.PointWidth;
-                boxSize = _inputPdf.PointWidth;
-            }
-            var box = new XRect(leftEdge, TopMargin, boxSize, boxSize);
-            DrawPageUsingSourceTrimIntent(gfx, pageNumber, box);
-            box = new XRect(leftEdge, boxSize + TopMargin, boxSize, boxSize);
-            DrawPageUsingSourceTrimIntent(gfx, pageNumber, box);
-            box = new XRect(leftEdge, 2 * boxSize + TopMargin, boxSize, boxSize);
-            DrawPageUsingSourceTrimIntent(gfx, pageNumber, box);
+            DrawSide(gfx, pageNumber, _rightToLeft ? _leftColumnTrimBoxes : _rightColumnTrimBoxes);
         }
 
         private void DrawSuperiorSide(XGraphics gfx, int pageNumber)
         {
-            var leftEdge = LeftEdgeForSuperiorPage;
-            var boxSize = _paperWidth / 2;
-            if (_inputPdf.PointWidth < _paperWidth / 2)
+            DrawSide(gfx, pageNumber, _rightToLeft ? _rightColumnTrimBoxes : _leftColumnTrimBoxes);
+        }
+
+        private void DrawSide(XGraphics gfx, int pageNumber, XRect[] trimBoxes)
+        {
+            if (trimBoxes == null || trimBoxes.Length == 0)
+                return;
+
+            for (var row = 0; row < trimBoxes.Length; row++)
             {
-                if (Math.Abs(leftEdge) < 0.01)
-                    leftEdge = (_paperWidth / 2) - _inputPdf.PointWidth;
-                boxSize = _inputPdf.PointWidth;
+                DrawPageUsingSourceTrimIntent(gfx, pageNumber, trimBoxes[row]);
             }
-            var box = new XRect(leftEdge, TopMargin, boxSize, boxSize);
-            DrawPageUsingSourceTrimIntent(gfx, pageNumber, box);
-            box = new XRect(leftEdge, boxSize + TopMargin, boxSize, boxSize);
-            DrawPageUsingSourceTrimIntent(gfx, pageNumber, box);
-            box = new XRect(leftEdge, 2 * boxSize + TopMargin, boxSize, boxSize);
-            DrawPageUsingSourceTrimIntent(gfx, pageNumber, box);
+        }
+
+        private void DrawSideCutGuides(XGraphics gfx)
+        {
+            if (_horizontalCutGuideYs == null || _horizontalCutGuideYs.Length == 0)
+                return;
+
+            foreach (var y in _horizontalCutGuideYs)
+                DrawCenterCutGuideSegments(gfx, _sheetTrimBox, 0, y);
+        }
+
+        private void InitializePanelGeometry()
+        {
+            _leftColumnTrimBoxes = new XRect[3];
+            _rightColumnTrimBoxes = new XRect[3];
+            _horizontalCutGuideYs = Array.Empty<double>();
+
+            var sourceBoxes = GetSourcePageBoxes(1);
+            var sourceTrim = sourceBoxes.TrimBox;
+            if (sourceTrim.Width <= 0 || sourceTrim.Height <= 0)
+                sourceTrim = new XRect(0, 0, _inputPdf.PointWidth, _inputPdf.PointHeight);
+
+            var sourceBleed = sourceBoxes.BleedBox;
+            if (sourceBleed.Width <= 0 || sourceBleed.Height <= 0)
+                sourceBleed = sourceTrim;
+
+            var sourceTrimSize = GetMinimumSourceTrimSize();
+            if (sourceTrimSize <= 0)
+                sourceTrimSize = Math.Min(sourceTrim.Width, sourceTrim.Height);
+            if (sourceTrimSize <= 0)
+                sourceTrimSize = Math.Min(_inputPdf.PointWidth, _inputPdf.PointHeight);
+
+            var panelTrimSize = sourceTrimSize;
+            var scaleXToTrim = panelTrimSize / sourceTrim.Width;
+            var scaleYToTrim = panelTrimSize / sourceTrim.Height;
+
+            var sourceBleedLeft = Math.Max(0, sourceTrim.Left - sourceBleed.Left) * scaleXToTrim;
+            var sourceBleedRight = Math.Max(0, sourceBleed.Right - sourceTrim.Right) * scaleXToTrim;
+            var sourceBleedTop = Math.Max(0, sourceTrim.Top - sourceBleed.Top) * scaleYToTrim;
+            var sourceBleedBottom = Math.Max(0, sourceBleed.Bottom - sourceTrim.Bottom) * scaleYToTrim;
+
+            var sourceBleedWidth = panelTrimSize + sourceBleedLeft + sourceBleedRight;
+            var sourceBleedHeight = panelTrimSize + sourceBleedTop + sourceBleedBottom;
+
+            if (sourceBleedWidth <= 0 || sourceBleedHeight <= 0)
+            {
+                _sheetTrimBox = new XRect(0, 0, _paperWidth.Point, _paperHeight.Point);
+                for (var row = 0; row < 3; row++)
+                {
+                    _leftColumnTrimBoxes[row] = _sheetTrimBox;
+                    _rightColumnTrimBoxes[row] = _sheetTrimBox;
+                }
+                return;
+            }
+
+            var fitScale = Math.Min(_paperWidth.Point / (2 * sourceBleedWidth), _paperHeight.Point / (3 * sourceBleedHeight));
+            var scale = Math.Min(1.0, fitScale);
+            if (double.IsNaN(scale) || double.IsInfinity(scale) || scale <= 0)
+                scale = 1.0;
+
+            var bleedLeft = sourceBleedLeft * scale;
+            var bleedTop = sourceBleedTop * scale;
+            var trimSize = panelTrimSize * scale;
+            var bleedWidth = sourceBleedWidth * scale;
+            var bleedHeight = sourceBleedHeight * scale;
+
+            var gridOriginX = (_paperWidth.Point - (2 * bleedWidth)) / 2;
+            var gridOriginY = (_paperHeight.Point - (3 * bleedHeight)) / 2;
+
+            for (var row = 0; row < 3; row++)
+            {
+                var y = gridOriginY + (row * bleedHeight) + bleedTop;
+                _leftColumnTrimBoxes[row] = new XRect(gridOriginX + bleedLeft, y, trimSize, trimSize);
+                _rightColumnTrimBoxes[row] = new XRect(gridOriginX + bleedWidth + bleedLeft, y, trimSize, trimSize);
+            }
+
+            _sheetTrimBox = new XRect(
+                _leftColumnTrimBoxes[0].Left,
+                _leftColumnTrimBoxes[0].Top,
+                _rightColumnTrimBoxes[2].Right - _leftColumnTrimBoxes[0].Left,
+                _rightColumnTrimBoxes[2].Bottom - _leftColumnTrimBoxes[0].Top);
+
+            _horizontalCutGuideYs = new[]
+            {
+                _leftColumnTrimBoxes[0].Bottom,
+                _leftColumnTrimBoxes[1].Top,
+                _leftColumnTrimBoxes[1].Bottom,
+                _leftColumnTrimBoxes[2].Top
+            };
         }
 
         /// <summary>

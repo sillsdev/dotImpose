@@ -1,5 +1,6 @@
 ﻿using PdfSharp.Drawing;
 using PdfSharp.Pdf;
+using System;
 
 namespace DotImpose.LayoutMethods
 {
@@ -9,6 +10,14 @@ namespace DotImpose.LayoutMethods
 	/// </summary>
 	public class SideFold4UpBookletLayouter : LayoutMethod
 	{
+		private XRect _upperLeftTrimBox;
+		private XRect _upperRightTrimBox;
+		private XRect _lowerLeftTrimBox;
+		private XRect _lowerRightTrimBox;
+		private XRect _sheetTrimBox;
+		private double _horizontalCutUpperY;
+		private double _horizontalCutLowerY;
+
 		/// <summary>
 		/// Initializes a new instance of the SideFold4UpBookletLayouter class.
 		/// </summary>
@@ -26,6 +35,18 @@ namespace DotImpose.LayoutMethods
 			var size = paperTarget.GetPaperDimensions(_inputPdf.PixelHeight, _inputPdf.PixelWidth);
 			_paperWidth = XUnit.FromPoint(size.X);
 			_paperHeight = XUnit.FromPoint(size.Y);
+			InitializePanelGeometry();
+		}
+
+		/// <summary>
+		/// Gets the sheet-level trim box that spans from the upper-left panel trim origin
+		/// to the lower-right panel trim extent.
+		/// </summary>
+		protected override XRect GetSheetTrimBoxInPaperCoordinates()
+		{
+			return _sheetTrimBox.Width > 0 && _sheetTrimBox.Height > 0
+				? _sheetTrimBox
+				: base.GetSheetTrimBoxInPaperCoordinates();
 		}
 
 		/// <summary>
@@ -47,6 +68,12 @@ namespace DotImpose.LayoutMethods
 
 					//Right side of the front
 					DrawInferiorSide(gfx, 2 * idx - 1);
+
+					if (_showCropMarks)
+					{
+						DrawCenterCutGuideSegments(gfx, _sheetTrimBox, 0, _horizontalCutUpperY);
+						DrawCenterCutGuideSegments(gfx, _sheetTrimBox, 0, _horizontalCutLowerY);
+					}
 				}
 
 				// Back page of a sheet
@@ -61,24 +88,87 @@ namespace DotImpose.LayoutMethods
 						vacats -= 1;
 					else
 						DrawInferiorSide(gfx, numberOfPageSlotsAvailable + 1 - 2 * idx);
+
+					if (_showCropMarks)
+					{
+						DrawCenterCutGuideSegments(gfx, _sheetTrimBox, 0, _horizontalCutUpperY);
+						DrawCenterCutGuideSegments(gfx, _sheetTrimBox, 0, _horizontalCutLowerY);
+					}
 				}
 			}
 		}
 
 		private void DrawInferiorSide(XGraphics gfx, int pageNumber)
 		{
-			var box = new XRect(LeftEdgeForInferiorPage, 0, _paperWidth / 2, _paperHeight / 2);
-			DrawPageUsingSourceTrimIntent(gfx, pageNumber, box);
-			box = new XRect(LeftEdgeForInferiorPage, _paperHeight / 2, _paperWidth / 2, _paperHeight / 2);
-			DrawPageUsingSourceTrimIntent(gfx, pageNumber, box);
+			DrawPageUsingSourceTrimIntent(gfx, pageNumber, _upperRightTrimBox);
+			DrawPageUsingSourceTrimIntent(gfx, pageNumber, _lowerRightTrimBox);
 		}
 
 		private void DrawSuperiorSide(XGraphics gfx, int pageNumber)
 		{
-			var box = new XRect(LeftEdgeForSuperiorPage, 0, _paperWidth / 2, _paperHeight / 2);
-			DrawPageUsingSourceTrimIntent(gfx, pageNumber, box);
-			box = new XRect(LeftEdgeForSuperiorPage, _paperHeight / 2, _paperWidth / 2, _paperHeight / 2);
-			DrawPageUsingSourceTrimIntent(gfx, pageNumber, box);
+			DrawPageUsingSourceTrimIntent(gfx, pageNumber, _upperLeftTrimBox);
+			DrawPageUsingSourceTrimIntent(gfx, pageNumber, _lowerLeftTrimBox);
+		}
+
+		private void InitializePanelGeometry()
+		{
+			var sourceBoxes = GetSourcePageBoxes(1);
+			var trim = sourceBoxes.TrimBox;
+			if (trim.Width <= 0 || trim.Height <= 0)
+				trim = new XRect(0, 0, _inputPdf.PointWidth, _inputPdf.PointHeight);
+
+			var bleed = sourceBoxes.BleedBox;
+			if (bleed.Width <= 0 || bleed.Height <= 0)
+				bleed = trim;
+
+			var sourceBleedLeft = Math.Max(0, trim.Left - bleed.Left);
+			var sourceBleedRight = Math.Max(0, bleed.Right - trim.Right);
+			var sourceBleedTop = Math.Max(0, trim.Top - bleed.Top);
+			var sourceBleedBottom = Math.Max(0, bleed.Bottom - trim.Bottom);
+
+			var sourceBleedWidth = trim.Width + sourceBleedLeft + sourceBleedRight;
+			var sourceBleedHeight = trim.Height + sourceBleedTop + sourceBleedBottom;
+
+			if (sourceBleedWidth <= 0 || sourceBleedHeight <= 0)
+			{
+				_sheetTrimBox = new XRect(0, 0, _paperWidth.Point, _paperHeight.Point);
+				_upperLeftTrimBox = _sheetTrimBox;
+				_upperRightTrimBox = _sheetTrimBox;
+				_lowerLeftTrimBox = _sheetTrimBox;
+				_lowerRightTrimBox = _sheetTrimBox;
+				_horizontalCutUpperY = _sheetTrimBox.Y + (_sheetTrimBox.Height / 2);
+				_horizontalCutLowerY = _horizontalCutUpperY;
+				return;
+			}
+
+			var fitScale = Math.Min(_paperWidth.Point / (2 * sourceBleedWidth), _paperHeight.Point / (2 * sourceBleedHeight));
+			var scale = Math.Min(1.0, fitScale);
+			if (double.IsNaN(scale) || double.IsInfinity(scale) || scale <= 0)
+				scale = 1.0;
+
+			var bleedLeft = sourceBleedLeft * scale;
+			var bleedTop = sourceBleedTop * scale;
+			var trimWidth = trim.Width * scale;
+			var trimHeight = trim.Height * scale;
+			var bleedWidth = sourceBleedWidth * scale;
+			var bleedHeight = sourceBleedHeight * scale;
+
+			var gridOriginX = (_paperWidth.Point - (2 * bleedWidth)) / 2;
+			var gridOriginY = (_paperHeight.Point - (2 * bleedHeight)) / 2;
+
+			_upperLeftTrimBox = new XRect(gridOriginX + bleedLeft, gridOriginY + bleedTop, trimWidth, trimHeight);
+			_upperRightTrimBox = new XRect(gridOriginX + bleedWidth + bleedLeft, gridOriginY + bleedTop, trimWidth, trimHeight);
+			_lowerLeftTrimBox = new XRect(gridOriginX + bleedLeft, gridOriginY + bleedHeight + bleedTop, trimWidth, trimHeight);
+			_lowerRightTrimBox = new XRect(gridOriginX + bleedWidth + bleedLeft, gridOriginY + bleedHeight + bleedTop, trimWidth, trimHeight);
+
+			_sheetTrimBox = new XRect(
+				_upperLeftTrimBox.Left,
+				_upperLeftTrimBox.Top,
+				_lowerRightTrimBox.Right - _upperLeftTrimBox.Left,
+				_lowerRightTrimBox.Bottom - _upperLeftTrimBox.Top);
+
+			_horizontalCutUpperY = _upperLeftTrimBox.Bottom;
+			_horizontalCutLowerY = _lowerLeftTrimBox.Top;
 		}
 
 		/// <summary>

@@ -419,18 +419,22 @@ namespace DotImpose.LayoutMethods
 			var xunitsBetweenTrimAndMediaBox = XUnit.FromMillimeter(kMillimetersBetweenTrimAndMediaBox);
 			_activeOutputPage = page;
 			_activeCropMarkMarginPoints = _showCropMarks ? xunitsBetweenTrimAndMediaBox.Point : 0;
+			var fullSheetRect = new XRect(0, 0, _paperWidth.Point, _paperHeight.Point);
+			var sheetTrimRect = IntersectBoxes(NormalizeBox(GetSheetTrimBoxInPaperCoordinates()), fullSheetRect);
+			if (sheetTrimRect.Width <= 0 || sheetTrimRect.Height <= 0)
+				sheetTrimRect = fullSheetRect;
 
 			if (_showCropMarks)
 			{
 				page.Width = XUnit.FromMillimeter(_paperWidth.Millimeter + (2.0 * kMillimetersBetweenTrimAndMediaBox));
-				page.Height = XUnit.FromMillimeter(_paperHeight.Millimeter + (2.0 * kMillimetersBetweenTrimAndMediaBox)); ;
-				page.TrimBox = GetTrimBoxRectangle();
+				page.Height = XUnit.FromMillimeter(_paperHeight.Millimeter + (2.0 * kMillimetersBetweenTrimAndMediaBox));
+				page.TrimBox = ToPdfRectangle(OffsetBox(sheetTrimRect, xunitsBetweenTrimAndMediaBox.Point, xunitsBetweenTrimAndMediaBox.Point));
 			}
 			else
 			{
 				page.Width = _paperWidth;
 				page.Height = _paperHeight;
-				page.TrimBox = page.MediaBox;
+				page.TrimBox = ToPdfRectangle(sheetTrimRect);
 			}
 
 			page.BleedBox = page.TrimBox;
@@ -452,6 +456,15 @@ namespace DotImpose.LayoutMethods
 		}
 
 		/// <summary>
+		/// Gets the sheet trim rectangle in paper coordinates (before crop-mark margin offset).
+		/// </summary>
+		/// <returns>Trim rectangle in paper coordinates.</returns>
+		protected virtual XRect GetSheetTrimBoxInPaperCoordinates()
+		{
+			return new XRect(0, 0, _paperWidth.Point, _paperHeight.Point);
+		}
+
+		/// <summary>
 		/// Converts an <see cref="XRect"/> to a <see cref="PdfRectangle"/>.
 		/// </summary>
 		/// <param name="rect">Rectangle in point coordinates.</param>
@@ -468,8 +481,11 @@ namespace DotImpose.LayoutMethods
 		protected PdfRectangle GetTrimBoxRectangle()
 		{
 			var xunitsBetweenTrimAndMediaBox = XUnit.FromMillimeter(kMillimetersBetweenTrimAndMediaBox);
-			XPoint upperLeftTrimBoxCorner = new XPoint(xunitsBetweenTrimAndMediaBox.Point, xunitsBetweenTrimAndMediaBox.Point);
-			return new PdfRectangle(upperLeftTrimBoxCorner, new XSize(_paperWidth.Point, _paperHeight.Point));
+			var fullSheetRect = new XRect(0, 0, _paperWidth.Point, _paperHeight.Point);
+			var sheetTrimRect = IntersectBoxes(NormalizeBox(GetSheetTrimBoxInPaperCoordinates()), fullSheetRect);
+			if (sheetTrimRect.Width <= 0 || sheetTrimRect.Height <= 0)
+				sheetTrimRect = fullSheetRect;
+			return ToPdfRectangle(OffsetBox(sheetTrimRect, xunitsBetweenTrimAndMediaBox.Point, xunitsBetweenTrimAndMediaBox.Point));
 		}
 
 		/// <summary>
@@ -530,6 +546,30 @@ namespace DotImpose.LayoutMethods
 						 XUnit.FromPoint(lowerRightTrimBoxCorner.X + xunitsBetweenTrimAndMediaBox.Point).Point, lowerRightTrimBoxCorner.Y);
 			gfx.DrawLine(pen, lowerRightTrimBoxCorner.X, XUnit.FromPoint(lowerRightTrimBoxCorner.Y + gapLength.Point).Point, lowerRightTrimBoxCorner.X,
 						 XUnit.FromPoint(lowerRightTrimBoxCorner.Y + xunitsBetweenTrimAndMediaBox.Point).Point);
+		}
+
+		/// <summary>
+		/// Draws short internal cut guide segments on the left and right sides of the sheet trim.
+		/// </summary>
+		/// <param name="gfx">Graphics context used to draw the guides.</param>
+		/// <param name="sheetTrimBox">Sheet trim box in graphics coordinates.</param>
+		/// <param name="verticalCutX">Unused in booklet mode.</param>
+		/// <param name="horizontalCutY">Horizontal cut y-position in graphics coordinates.</param>
+		protected static void DrawCenterCutGuideSegments(XGraphics gfx, XRect sheetTrimBox, double verticalCutX, double horizontalCutY)
+		{
+			var pen = new XPen(XColor.FromKnownColor(XKnownColor.Black), .25);
+			var outerLength = XUnit.FromMillimeter(kMillimetersBetweenTrimAndMediaBox).Point;
+			var gapLength = XUnit.FromMillimeter(3.175).Point;
+
+			var leftStart = sheetTrimBox.Left - outerLength;
+			var leftEnd = sheetTrimBox.Left - gapLength;
+			if (leftEnd > leftStart)
+				gfx.DrawLine(pen, leftStart, horizontalCutY, leftEnd, horizontalCutY);
+
+			var rightStart = sheetTrimBox.Right + gapLength;
+			var rightEnd = sheetTrimBox.Right + outerLength;
+			if (rightEnd > rightStart)
+				gfx.DrawLine(pen, rightStart, horizontalCutY, rightEnd, horizontalCutY);
 		}
 
 		/// <summary>

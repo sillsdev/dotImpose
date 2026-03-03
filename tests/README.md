@@ -18,7 +18,7 @@ dotnet test tests/sillsdev.dotImpose.Tests.csproj
 
 The test suite includes:
 
-- **NullLayoutMethod tests**: Verifies that PDFs can be passed through unchanged, and that bleed margins are properly applied to TrimBox/ArtBox.
+- **NullLayoutMethod tests**: Verifies pass-through behavior, synthesis of trim from `insetTrimboxMillimeters` when needed, and preservation of explicit source trim/bleed intent.
 - **SideFoldBookletLayouter tests**: Confirms that side-fold booklet layouts produce valid output.
 - **SideFold4UpBookletLayouter tests**: Tests the 4-up booklet layout method enablement.
 - **CalendarLayouter tests**: Validates calendar layout generation.

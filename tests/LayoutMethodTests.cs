@@ -69,7 +69,7 @@ public class LayoutMethodTests : IDisposable
     public void NullLayoutMethod_WithBleed_SetsTrimBoxes()
     {
         // Arrange
-        var layoutMethod = new NullLayoutMethod(bleedMM: 5.0);
+        var layoutMethod = new NullLayoutMethod(insetTrimboxMillimeters: 5.0);
         var outputPath = Path.Combine(_outputDirectory, "null-bleed-output.pdf");
         var inputPdf = XPdfForm.FromFile(_testPdfPath);
         var paperTarget = new PaperTarget("A4", PdfSharp.PageSize.A4);
@@ -100,7 +100,7 @@ public class LayoutMethodTests : IDisposable
             document.Save(singlePageInput);
         }
 
-        var layoutMethod = new NullLayoutMethod(bleedMM: 3.0);
+        var layoutMethod = new NullLayoutMethod(insetTrimboxMillimeters: 3.0);
         var outputPath = Path.Combine(_outputDirectory, "null-bleed-cropmarks-output.pdf");
         var inputPdf = XPdfForm.FromFile(singlePageInput);
         var paperTarget = new PaperTarget("A4", PdfSharp.PageSize.A4);
@@ -138,8 +138,8 @@ public class LayoutMethodTests : IDisposable
         var noCropInputPdf = XPdfForm.FromFile(singlePageInput);
         var withCropInputPdf = XPdfForm.FromFile(singlePageInput);
 
-        new NullLayoutMethod(bleedMM: 3.0).Layout(noCropInputPdf, singlePageInput, noCropOutputPath, paperTarget, false, false);
-        new NullLayoutMethod(bleedMM: 3.0).Layout(withCropInputPdf, singlePageInput, cropOutputPath, paperTarget, false, true);
+        new NullLayoutMethod(insetTrimboxMillimeters: 3.0).Layout(noCropInputPdf, singlePageInput, noCropOutputPath, paperTarget, false, false);
+        new NullLayoutMethod(insetTrimboxMillimeters: 3.0).Layout(withCropInputPdf, singlePageInput, cropOutputPath, paperTarget, false, true);
 
         using var noCropOutputDoc = PdfReader.Open(noCropOutputPath, PdfDocumentOpenMode.Import);
         using var cropOutputDoc = PdfReader.Open(cropOutputPath, PdfDocumentOpenMode.Import);
@@ -197,7 +197,7 @@ public class LayoutMethodTests : IDisposable
     }
 
     [Fact]
-    public void NullLayoutMethod_WithBleedAndExplicitSourceTrim_PreservesSourceTrimIntent()
+    public void NullLayoutMethod_WithBleedAndExplicitSourceTrim_ThrowsInvalidOperationException()
     {
         var singlePageInput = Path.Combine(_outputDirectory, "source-trim-with-bleed-parameter-input.pdf");
         var sourceTrimInset = XUnit.FromMillimeter(3).Point;
@@ -218,19 +218,8 @@ public class LayoutMethodTests : IDisposable
         var inputPdf = XPdfForm.FromFile(singlePageInput);
         var paperTarget = new PaperTarget("A4", PdfSharp.PageSize.A4);
 
-        new NullLayoutMethod(bleedMM: 5.0).Layout(inputPdf, singlePageInput, outputPath, paperTarget, false, false);
-
-        using var outputDoc = PdfReader.Open(outputPath, PdfDocumentOpenMode.Import);
-        var outputPage = outputDoc.Pages[0];
-        var trimBox = outputPage.TrimBox.ToXRect();
-        var bleedBox = outputPage.BleedBox.ToXRect();
-
-        Assert.InRange(trimBox.X - sourceTrimInset, -0.5, 0.5);
-        Assert.InRange(trimBox.Y - sourceTrimInset, -0.5, 0.5);
-        Assert.InRange(trimBox.Width - sourceTrimWidth, -0.5, 0.5);
-        Assert.InRange(trimBox.Height - sourceTrimHeight, -0.5, 0.5);
-        Assert.InRange(XUnit.FromPoint(bleedBox.Width).Millimeter - 216, -0.5, 0.5);
-        Assert.InRange(XUnit.FromPoint(bleedBox.Height).Millimeter - 303, -0.5, 0.5);
+        Assert.Throws<InvalidOperationException>(() =>
+            new NullLayoutMethod(insetTrimboxMillimeters: 5.0).Layout(inputPdf, singlePageInput, outputPath, paperTarget, false, false));
     }
 
     [Fact]

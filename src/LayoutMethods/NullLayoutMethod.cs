@@ -7,24 +7,38 @@ using PdfSharp.Pdf.IO;
 namespace DotImpose.LayoutMethods
 {
 	/// <summary>
-	/// Pass the input PDF file along to the output, optionally setting the TrimBox, ArtBox, and BleedBox
-	/// to a smaller size offset inside the MediaBox (and CropBox).
+	/// Pass the input PDF file along to the output while preserving source box intent.
+	/// When a source page does not define an explicit TrimBox, this method can synthesize one
+	/// by insetting from the source BleedBox/MediaBox using insetTrimboxMillimeters.
 	/// </summary>
 	public class NullLayoutMethod : LayoutMethod
 	{
 		/// <summary>
-		/// The bleed margin in millimeters.
+		/// Deprecated trim inset amount in millimeters.
 		/// </summary>
-		protected double _bleedMM;
+		protected double _insetTrimboxMillimeters;
 		private const double kBleedMicroDeltaMM = 0.01; // use for floating point comparisons instead of 0.0
+
+		/// <summary>
+		/// Initializes a new instance of the NullLayoutMethod class with no synthetic trim inset.
+		/// </summary>
+		public NullLayoutMethod() : base("original", "Original")
+		{
+			_insetTrimboxMillimeters = 0.0;
+		}
 
 		/// <summary>
 		/// Initializes a new instance of the NullLayoutMethod class.
 		/// </summary>
-		/// <param name="bleedMM">The amount in mm to offset the TrimBox et al. inside the MediaBox. The default is 0mm (TrimBox the same as the MediaBox).</param>
-		public NullLayoutMethod(double bleedMM = 0.0) : base("original", "Original")
+		/// <param name="insetTrimboxMillimeters">
+		/// Deprecated: The amount in mm used to synthesize a TrimBox inset when the source page has no explicit TrimBox.
+		/// This parameter is source-data-dependent and will be removed in a future release.
+		/// If source pages define an explicit TrimBox, passing a non-zero insetTrimboxMillimeters now throws.
+		/// </param>
+		[Obsolete("insetTrimboxMillimeters is deprecated and will be removed in a future release. Prefer defining TrimBox/BleedBox in the source PDF.")]
+		public NullLayoutMethod(double insetTrimboxMillimeters) : base("original", "Original")
 		{
-			_bleedMM = bleedMM;
+			_insetTrimboxMillimeters = insetTrimboxMillimeters;
 		}
 
 		/// <summary>
@@ -32,7 +46,7 @@ namespace DotImpose.LayoutMethods
 		/// </summary>
 		public override void Layout(XPdfForm inputPdf, string inputPath, string outputPath, PaperTarget paperTarget, bool rightToLeft, bool showCropMarks)
 		{
-			if (!showCropMarks && Math.Abs(_bleedMM) < kBleedMicroDeltaMM)
+			if (!showCropMarks && Math.Abs(_insetTrimboxMillimeters) < kBleedMicroDeltaMM)
 			{
 				File.Copy(inputPath, outputPath, true); // we don't have any value to add, so just deliver a copy of the original
 			}
@@ -42,6 +56,7 @@ namespace DotImpose.LayoutMethods
 				_inputPdf = inputPdf;
 				_showCropMarks = showCropMarks;
 				EnsureSourcePageBoxesLoaded(inputPath);
+				ThrowIfDeprecatedInsetTrimboxMillimetersUsedWithExplicitSourceTrim();
 
 				PdfDocument outputDocument = new PdfDocument();
 				outputDocument.PageLayout = PdfPageLayout.SinglePage;
@@ -97,6 +112,22 @@ namespace DotImpose.LayoutMethods
 			}
 		}
 
+		private void ThrowIfDeprecatedInsetTrimboxMillimetersUsedWithExplicitSourceTrim()
+		{
+			if (Math.Abs(_insetTrimboxMillimeters) < kBleedMicroDeltaMM)
+				return;
+
+			for (var pageNumber = 1; pageNumber <= _inputPdf.PageCount; pageNumber++)
+			{
+				if (GetSourcePageBoxes(pageNumber).HasExplicitTrimBox)
+				{
+					throw new InvalidOperationException(
+						"NullLayoutMethod(insetTrimboxMillimeters) is deprecated and cannot be used when the source PDF defines TrimBox. " +
+						"Use NullLayoutMethod() and define trim/bleed boxes in the source PDF.");
+				}
+			}
+		}
+
 		private XGraphics GetGraphicsForNullPage(PdfDocument outputDocument, int pageNumber)
 		{
 			if (!_showCropMarks)
@@ -124,10 +155,10 @@ namespace DotImpose.LayoutMethods
 			trimBoxRect = sourceBoxes.TrimBox;
 			bleedBoxRect = sourceBoxes.BleedBox;
 
-			// Preserve explicit source trim intent; bleedMM is only used to synthesize trim when no trim box exists.
-			if (Math.Abs(_bleedMM) > kBleedMicroDeltaMM && !sourceBoxes.HasExplicitTrimBox)
+			// Preserve explicit source trim intent; insetTrimboxMillimeters is only used to synthesize trim when no trim box exists.
+			if (Math.Abs(_insetTrimboxMillimeters) > kBleedMicroDeltaMM && !sourceBoxes.HasExplicitTrimBox)
 			{
-				var bleedInset = XUnit.FromMillimeter(_bleedMM);
+				var bleedInset = XUnit.FromMillimeter(_insetTrimboxMillimeters);
 				trimBoxRect = InsetBox(bleedBoxRect, bleedInset.Point);
 			}
 

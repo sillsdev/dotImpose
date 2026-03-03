@@ -64,6 +64,10 @@ DotImpose supports full-bleed workflows where the client application provides so
 ### NullLayoutMethod
 
 - Preserves source page content and source box geometry as-is (see note about Crop Marks below).
+- `NullLayoutMethod(insetTrimboxMillimeters)` is deprecated.
+- If a source page defines an explicit `TrimBox`, using non-zero `insetTrimboxMillimeters` now throws an error.
+- If a source page does not define an explicit `TrimBox`, non-zero `insetTrimboxMillimeters` synthesizes a `TrimBox` by insetting from source bleed/media geometry. In other words, if you give it an A5 page and specify an insetTrimboxMillimeters value, you will get back pages where the TrimBox is smaller than A5.
+- Preferred approach: use `NullLayoutMethod()` and provide explicit source `TrimBox`/`BleedBox` in your input PDF.
 
 ### SideFoldBookletLayouter
 

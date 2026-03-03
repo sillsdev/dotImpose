@@ -285,7 +285,7 @@ public class ImpositionTests : IDisposable
     public void NullLayoutMethod_WithBleed_CreatesTrimBox()
     {
         // Arrange
-        var layoutMethod = new NullLayoutMethod(bleedMM: 3.0);
+        var layoutMethod = new NullLayoutMethod(insetTrimboxMillimeters: 3.0);
         var outputPath = Path.Combine(_outputDirectory, "null-bleed.pdf");
         var inputPdf = XPdfForm.FromFile(_testPdfPath);
         var paperTarget = new PaperTarget("A4", PdfSharp.PageSize.A4);

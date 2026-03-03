@@ -412,4 +412,45 @@ public class LayoutMethodTests : IDisposable
         using var outputDoc = PdfReader.Open(outputPath, PdfDocumentOpenMode.Import);
         Assert.True(outputDoc.PageCount > 0);
     }
+
+    [Fact]
+    public void CalendarLayouter_WithCropMarks_BackPageBleedExpandsOnBottomForRotatedPanel()
+    {
+        var sourcePath = Path.Combine(_outputDirectory, "calendar-rotated-back-fullbleed-input.pdf");
+        var sourceTrimInset = XUnit.FromMillimeter(3).Point;
+        var sourceTrimWidth = XUnit.FromMillimeter(297).Point;
+        var sourceTrimHeight = XUnit.FromMillimeter(210).Point;
+
+        using (var document = new PdfDocument())
+        {
+            for (var i = 0; i < 2; i++)
+            {
+                var page = document.AddPage();
+                page.Width = XUnit.FromMillimeter(303);
+                page.Height = XUnit.FromMillimeter(216);
+                page.TrimBox = new PdfRectangle(new XPoint(sourceTrimInset, sourceTrimInset), new XSize(sourceTrimWidth, sourceTrimHeight));
+                page.BleedBox = page.MediaBox;
+            }
+            document.Save(sourcePath);
+        }
+
+        var outputPath = Path.Combine(_outputDirectory, "calendar-rotated-back-fullbleed-output.pdf");
+        var inputPdf = XPdfForm.FromFile(sourcePath);
+        var paperTarget = new PaperTarget("A4", PdfSharp.PageSize.A4);
+
+        new CalendarLayouter().Layout(inputPdf, sourcePath, outputPath, paperTarget, false, true);
+
+        using var outputDoc = PdfReader.Open(outputPath, PdfDocumentOpenMode.Import);
+        Assert.True(outputDoc.PageCount >= 2, "Expected front and back sheet pages.");
+
+        var backPage = outputDoc.Pages[1];
+        var trim = backPage.TrimBox.ToXRect();
+        var bleed = backPage.BleedBox.ToXRect();
+
+        var topExpansion = trim.Top - bleed.Top;
+        var bottomExpansion = bleed.Bottom - trim.Bottom;
+
+        Assert.True(bottomExpansion > 1.0, "Expected bleed expansion toward bottom media margin for rotated back panel.");
+        Assert.InRange(topExpansion, 0.0, 0.5);
+    }
 }

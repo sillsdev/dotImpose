@@ -255,16 +255,30 @@ namespace DotImpose.LayoutMethods
 		/// </summary>
 		/// <param name="gfx">Target graphics context.</param>
 		/// <param name="pageNumber">One-based source page index.</param>
-		/// <param name="targetTrimBox">Destination trim box in output-page coordinates.</param>
+		/// <param name="targetTrimBox">Destination trim box in graphics coordinates.</param>
 		protected void DrawPageUsingSourceTrimIntent(XGraphics gfx, int pageNumber, XRect targetTrimBox)
 		{
+			DrawPageUsingSourceTrimIntent(gfx, pageNumber, targetTrimBox, targetTrimBox);
+		}
+
+		/// <summary>
+		/// Draws a source page by mapping source trim to a graphics-space target trim box,
+		/// while allowing a separate page-space trim box for metadata updates.
+		/// </summary>
+		/// <param name="gfx">Target graphics context.</param>
+		/// <param name="pageNumber">One-based source page index.</param>
+		/// <param name="drawTargetTrimBox">Destination trim box in graphics coordinates used for drawing.</param>
+		/// <param name="metadataTargetTrimBox">Destination trim box in page coordinates used for Trim/Bleed metadata updates.</param>
+		protected void DrawPageUsingSourceTrimIntent(XGraphics gfx, int pageNumber, XRect drawTargetTrimBox, XRect metadataTargetTrimBox)
+		{
 			var sourceBoxes = GetSourcePageBoxes(pageNumber);
-			var mappedMedia = MapSourceRectangleToTargetTrim(sourceBoxes.MediaBox, sourceBoxes.TrimBox, targetTrimBox);
-			var mappedBleed = MapSourceRectangleToTargetTrim(sourceBoxes.BleedBox, sourceBoxes.TrimBox, targetTrimBox);
-			UpdateActivePageBoxesForTrimIntent(sourceBoxes, targetTrimBox, mappedBleed);
+			var mappedMedia = MapSourceRectangleToTargetTrim(sourceBoxes.MediaBox, sourceBoxes.TrimBox, drawTargetTrimBox);
+			var mappedBleedForDrawing = MapSourceRectangleToTargetTrim(sourceBoxes.BleedBox, sourceBoxes.TrimBox, drawTargetTrimBox);
+			var mappedBleedForMetadata = MapSourceRectangleToTargetTrim(sourceBoxes.BleedBox, sourceBoxes.TrimBox, metadataTargetTrimBox);
+			UpdateActivePageBoxesForTrimIntent(sourceBoxes, metadataTargetTrimBox, mappedBleedForMetadata);
 
 			var state = gfx.Save();
-			gfx.IntersectClip(mappedBleed);
+			gfx.IntersectClip(mappedBleedForDrawing);
 			_inputPdf.PageNumber = pageNumber;
 			gfx.DrawImage(_inputPdf, mappedMedia);
 			gfx.Restore(state);

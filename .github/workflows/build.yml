@@ -74,7 +74,7 @@ jobs:
 
           # Create version with run number (not run_id which is too large)
           # Use run_number which is smaller and fits in NuGet version constraints
-          VERSION_SUFFIX="${{ inputs.version-suffix || '' }}"
+          VERSION_SUFFIX="${{ inputs['version-suffix'] || '' }}"
           FULL_VERSION="${BASE_VERSION}.${{ github.run_number }}"
           if [ -n "$VERSION_SUFFIX" ]; then
             FULL_VERSION="${FULL_VERSION}-${VERSION_SUFFIX}"
@@ -108,13 +108,13 @@ jobs:
       - name: Upload package artifacts to GitHub (Draft)
         uses: actions/upload-artifact@v4
         with:
-          name: nuget-packages-${{ steps.version.outputs.full_version }}${{ inputs.artifact-name-suffix }}
+          name: nuget-packages-${{ steps.version.outputs.full_version }}${{ inputs['artifact-name-suffix'] }}
           path: nupkg/*.nupkg
 
       - name: Upload compiled binaries to GitHub
         uses: actions/upload-artifact@v4
         with:
-          name: binaries-${{ steps.version.outputs.full_version }}${{ inputs.artifact-name-suffix }}
+          name: binaries-${{ steps.version.outputs.full_version }}${{ inputs['artifact-name-suffix'] }}
           path: |
             output/Release/*.dll
             output/Release/*.pdb
@@ -131,13 +131,13 @@ jobs:
       - name: Download package artifacts
         uses: actions/download-artifact@v4
         with:
-          name: nuget-packages-${{ needs.build.outputs.version }}${{ inputs.artifact-name-suffix }}
+          name: nuget-packages-${{ needs.build.outputs.version }}${{ inputs['artifact-name-suffix'] }}
           path: release-artifacts/nupkg
 
       - name: Download compiled binaries artifacts
         uses: actions/download-artifact@v4
         with:
-          name: binaries-${{ needs.build.outputs.version }}${{ inputs.artifact-name-suffix }}
+          name: binaries-${{ needs.build.outputs.version }}${{ inputs['artifact-name-suffix'] }}
           path: release-artifacts/output
 
       - name: Create GitHub Release

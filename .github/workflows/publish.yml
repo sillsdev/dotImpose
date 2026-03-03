@@ -17,7 +17,7 @@ jobs:
     uses: ./.github/workflows/build.yml
     with:
       artifact-name-suffix: "-publish"
-      version-suffix: ${{ inputs.version-suffix }}
+      version-suffix: ${{ inputs['version-suffix'] }}
 
   publish:
     needs: build

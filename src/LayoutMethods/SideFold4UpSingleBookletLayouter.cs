@@ -148,22 +148,22 @@ namespace DotImpose.LayoutMethods
 		/// </summary>
 		private void DrawTopLeftCorner(XGraphics gfx, int pageNumber /* NB: page number is one-based*/)
 		{
-			DrawPageUsingSourceTrimIntent(gfx, pageNumber, _upperLeftTrimBox);
+			DrawPageUsingSourceTrimIntent(gfx, pageNumber, _rightToLeft ? _upperRightTrimBox : _upperLeftTrimBox);
 		}
 
 		private void DrawBottomLeftCorner(XGraphics gfx, int pageNumber /* NB: page number is one-based*/)
 		{
-			DrawPageUsingSourceTrimIntent(gfx, pageNumber, _lowerLeftTrimBox);
+			DrawPageUsingSourceTrimIntent(gfx, pageNumber, _rightToLeft ? _lowerRightTrimBox : _lowerLeftTrimBox);
 		}
 
 		private void DrawTopRightCorner(XGraphics gfx, int pageNumber /* NB: page number is one-based*/)
 		{
-			DrawPageUsingSourceTrimIntent(gfx, pageNumber, _upperRightTrimBox);
+			DrawPageUsingSourceTrimIntent(gfx, pageNumber, _rightToLeft ? _upperLeftTrimBox : _upperRightTrimBox);
 		}
 
 		private void DrawBottomRightCorner(XGraphics gfx, int pageNumber /* NB: page number is one-based*/)
 		{
-			DrawPageUsingSourceTrimIntent(gfx, pageNumber, _lowerRightTrimBox);
+			DrawPageUsingSourceTrimIntent(gfx, pageNumber, _rightToLeft ? _lowerLeftTrimBox : _lowerRightTrimBox);
 		}
 
 		private void InitializePanelGeometry()

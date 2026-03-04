@@ -100,14 +100,18 @@ namespace DotImpose.LayoutMethods
 
 		private void DrawInferiorSide(XGraphics gfx, int pageNumber)
 		{
-			DrawPageUsingSourceTrimIntent(gfx, pageNumber, _upperRightTrimBox);
-			DrawPageUsingSourceTrimIntent(gfx, pageNumber, _lowerRightTrimBox);
+			var upperBox = _rightToLeft ? _upperLeftTrimBox : _upperRightTrimBox;
+			var lowerBox = _rightToLeft ? _lowerLeftTrimBox : _lowerRightTrimBox;
+			DrawPageUsingSourceTrimIntent(gfx, pageNumber, upperBox);
+			DrawPageUsingSourceTrimIntent(gfx, pageNumber, lowerBox);
 		}
 
 		private void DrawSuperiorSide(XGraphics gfx, int pageNumber)
 		{
-			DrawPageUsingSourceTrimIntent(gfx, pageNumber, _upperLeftTrimBox);
-			DrawPageUsingSourceTrimIntent(gfx, pageNumber, _lowerLeftTrimBox);
+			var upperBox = _rightToLeft ? _upperRightTrimBox : _upperLeftTrimBox;
+			var lowerBox = _rightToLeft ? _lowerRightTrimBox : _lowerLeftTrimBox;
+			DrawPageUsingSourceTrimIntent(gfx, pageNumber, upperBox);
+			DrawPageUsingSourceTrimIntent(gfx, pageNumber, lowerBox);
 		}
 
 		private void InitializePanelGeometry()

@@ -53,7 +53,7 @@ namespace DotImpose.LayoutMethods
                     if (2 * idx <= _inputPdf.PageCount) //prevent asking for page 2 with a single page document (JH Oct 2010)
                     {
                         //Left side of back
-                        DrawSuperiorSide(gfx, 2 * idx);
+                        DrawSuperiorSide(gfx, 2 * idx, graphicsAreRotated180: true);
                     }
 
                     //Right side of the Back
@@ -61,7 +61,7 @@ namespace DotImpose.LayoutMethods
                         vacats -= 1;
                     else
                     {
-                        DrawInferiorSide(gfx, numberOfPageSlotsAvailable + 1 - 2 * idx);
+                        DrawInferiorSide(gfx, numberOfPageSlotsAvailable + 1 - 2 * idx, graphicsAreRotated180: true);
                     }
                 }
             }
@@ -78,30 +78,47 @@ namespace DotImpose.LayoutMethods
 
         /// With the portrait, left-to-right-language mode, this is the Right side.
         /// With the landscape, this is the bottom half.
-        private void DrawInferiorSide(XGraphics gfx, int pageNumber /* NB: page number is one-based*/)
+        private void DrawInferiorSide(XGraphics gfx, int pageNumber /* NB: page number is one-based*/, bool graphicsAreRotated180 = false)
         {
-            _inputPdf.PageNumber = pageNumber;
             XRect box;
             if (_inputPdf.PixelWidth > _inputPdf.PixelHeight)//landscape calendar
                 box = new XRect(0, _paperHeight / 2, _paperWidth, _paperHeight / 2);
             else
                 box = new XRect(LeftEdgeForInferiorPage, 0, _paperWidth / 2, _paperHeight);
-            gfx.DrawImage(_inputPdf, box);
+
+            if (graphicsAreRotated180)
+                DrawPageUsingSourceTrimIntent(gfx, pageNumber, box, MapRotatedGraphicsTrimBoxToPageTrimBox(box));
+            else
+                DrawPageUsingSourceTrimIntent(gfx, pageNumber, box);
         }
 
         /// <summary>
         /// With the portrait, left-to-right-language mode, this is the Left side.
         /// With the landscape, this is the top half.
         /// </summary>
-        private void DrawSuperiorSide(XGraphics gfx, int pageNumber)
+        private void DrawSuperiorSide(XGraphics gfx, int pageNumber, bool graphicsAreRotated180 = false)
         {
-            _inputPdf.PageNumber = pageNumber;
             XRect box;
             if (_inputPdf.PixelWidth > _inputPdf.PixelHeight)//landscape calendar
                 box = new XRect(0, 0, _paperWidth, _paperHeight / 2);
             else
                 box = new XRect(LeftEdgeForSuperiorPage, 0, _paperWidth / 2, _paperHeight);
-            gfx.DrawImage(_inputPdf, box);
+
+            if (graphicsAreRotated180)
+                DrawPageUsingSourceTrimIntent(gfx, pageNumber, box, MapRotatedGraphicsTrimBoxToPageTrimBox(box));
+            else
+                DrawPageUsingSourceTrimIntent(gfx, pageNumber, box);
+
+        }
+
+        private XRect MapRotatedGraphicsTrimBoxToPageTrimBox(XRect graphicsTrimBox)
+        {
+            // Calendar back pages rotate graphics by 180 degrees around the trim page.
+            return new XRect(
+                _paperWidth.Point - (graphicsTrimBox.X + graphicsTrimBox.Width),
+                _paperHeight.Point - (graphicsTrimBox.Y + graphicsTrimBox.Height),
+                graphicsTrimBox.Width,
+                graphicsTrimBox.Height);
 
         }
 

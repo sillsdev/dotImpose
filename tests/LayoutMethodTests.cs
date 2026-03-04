@@ -11,6 +11,9 @@ namespace sillsdev.dotImpose.Tests;
 
 public class LayoutMethodTests : IDisposable
 {
+    private static readonly object s_fixtureLock = new();
+    private static string? s_realBloomFixturePath;
+
     private readonly string _testPdfPath;
     private readonly string _outputDirectory;
 
@@ -493,9 +496,7 @@ public class LayoutMethodTests : IDisposable
     [Fact]
     public void SideFold4Up_RealBloomInput_DoesNotStretchImages()
     {
-        const string sourcePath = @"C:\Users\hatto\AppData\Local\Temp\toDotImpose-f38ec20b-a392-4d9e-9980-669285181859.pdf";
-        if (!File.Exists(sourcePath))
-            return;
+        var sourcePath = GetOrCreateRepositoryFixturePdfPath();
 
         var outputPath = Path.Combine(_outputDirectory, "sidefold4up-real-bloom-input-output.pdf");
         var inputPdf = XPdfForm.FromFile(sourcePath);
@@ -601,9 +602,7 @@ public class LayoutMethodTests : IDisposable
     [Fact]
     public void Square6Up_RealBloomInput_DoesNotUpscaleOrDrawOffPage()
     {
-        const string sourcePath = @"C:\Users\hatto\AppData\Local\Temp\toDotImpose-f38ec20b-a392-4d9e-9980-669285181859.pdf";
-        if (!File.Exists(sourcePath))
-            return;
+        var sourcePath = GetOrCreateRepositoryFixturePdfPath();
 
         var outputPath = Path.Combine(_outputDirectory, "square6up-real-bloom-input-output.pdf");
         var inputPdf = XPdfForm.FromFile(sourcePath);
@@ -626,6 +625,47 @@ public class LayoutMethodTests : IDisposable
                 Assert.True(transform.TranslateX >= 0, "Image draw translateX should not be negative for this input.");
                 Assert.True(transform.TranslateY >= 0, "Image draw translateY should not be negative for this input.");
             }
+        }
+    }
+
+    private static string GetOrCreateRepositoryFixturePdfPath()
+    {
+        lock (s_fixtureLock)
+        {
+            if (!string.IsNullOrWhiteSpace(s_realBloomFixturePath) && File.Exists(s_realBloomFixturePath))
+                return s_realBloomFixturePath;
+
+            var repoRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", ".."));
+            var testDataDirectory = Path.Combine(repoRoot, "tests", "TestData");
+            Directory.CreateDirectory(testDataDirectory);
+
+            var fixturePath = Path.Combine(testDataDirectory, "real-bloom-like-input.pdf");
+            if (!File.Exists(fixturePath))
+            {
+                var trimInset = XUnit.FromMillimeter(3).Point;
+                var trimSize = XUnit.FromMillimeter(130).Point;
+                var mediaSize = XUnit.FromMillimeter(136).Point;
+
+                using var document = new PdfDocument();
+                for (var i = 0; i < 4; i++)
+                {
+                    var page = document.AddPage();
+                    page.Width = XUnit.FromPoint(mediaSize);
+                    page.Height = XUnit.FromPoint(mediaSize);
+                    page.TrimBox = new PdfRectangle(new XPoint(trimInset, trimInset), new XSize(trimSize, trimSize));
+                    page.BleedBox = page.MediaBox;
+
+                    // Keep content non-empty so output includes form draws to inspect transform matrices.
+                    using var gfx = XGraphics.FromPdfPage(page);
+                    gfx.DrawRectangle(XPens.Black, XBrushes.LightGray,
+                        new XRect(trimInset, trimInset, trimSize, trimSize));
+                }
+
+                document.Save(fixturePath);
+            }
+
+            s_realBloomFixturePath = fixturePath;
+            return s_realBloomFixturePath;
         }
     }
 

@@ -1,15 +1,34 @@
 name: Build and Test
 
+permissions:
+  contents: read
+
 on:
   push:
     branches: [main, master]
   pull_request:
     branches: [main, master]
   workflow_dispatch:
+    inputs:
+      artifact-name-suffix:
+        description: "Suffix for artifact names"
+        required: false
+        default: ""
+        type: string
+      version-suffix:
+        description: "Optional SemVer prerelease suffix (example: test)"
+        required: false
+        default: ""
+        type: string
   workflow_call:
     inputs:
       artifact-name-suffix:
         description: "Suffix for artifact names"
+        required: false
+        default: ""
+        type: string
+      version-suffix:
+        description: "Optional SemVer prerelease suffix (example: test)"
         required: false
         default: ""
         type: string
@@ -55,7 +74,11 @@ jobs:
 
           # Create version with run number (not run_id which is too large)
           # Use run_number which is smaller and fits in NuGet version constraints
+          VERSION_SUFFIX="${{ inputs['version-suffix'] || '' }}"
           FULL_VERSION="${BASE_VERSION}.${{ github.run_number }}"
+          if [ -n "$VERSION_SUFFIX" ]; then
+            FULL_VERSION="${FULL_VERSION}-${VERSION_SUFFIX}"
+          fi
           echo "base_version=$BASE_VERSION" >> $GITHUB_OUTPUT
           echo "full_version=$FULL_VERSION" >> $GITHUB_OUTPUT
           echo "Base version: $BASE_VERSION"
@@ -85,28 +108,48 @@ jobs:
       - name: Upload package artifacts to GitHub (Draft)
         uses: actions/upload-artifact@v4
         with:
-          name: nuget-packages-${{ steps.version.outputs.full_version }}${{ inputs.artifact-name-suffix }}
+          name: nuget-packages-${{ steps.version.outputs.full_version }}${{ inputs['artifact-name-suffix'] }}
           path: nupkg/*.nupkg
 
       - name: Upload compiled binaries to GitHub
         uses: actions/upload-artifact@v4
         with:
-          name: binaries-${{ steps.version.outputs.full_version }}${{ inputs.artifact-name-suffix }}
+          name: binaries-${{ steps.version.outputs.full_version }}${{ inputs['artifact-name-suffix'] }}
           path: |
             output/Release/*.dll
             output/Release/*.pdb
             output/Release/*.deps.json
 
+  create-release:
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download package artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: nuget-packages-${{ needs.build.outputs.version }}${{ inputs['artifact-name-suffix'] }}
+          path: release-artifacts/nupkg
+
+      - name: Download compiled binaries artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: binaries-${{ needs.build.outputs.version }}${{ inputs['artifact-name-suffix'] }}
+          path: release-artifacts/output
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ steps.version.outputs.full_version }}
-          name: Release v${{ steps.version.outputs.full_version }}
+          tag_name: v${{ needs.build.outputs.version }}
+          name: Release v${{ needs.build.outputs.version }}
           draft: true
           prerelease: false
           generate_release_notes: true
           files: |
-            nupkg/*.nupkg
-            output/Release/*.dll
-            output/Release/*.pdb
-            output/Release/*.deps.json
+            release-artifacts/nupkg/*.nupkg
+            release-artifacts/output/*.dll
+            release-artifacts/output/*.pdb
+            release-artifacts/output/*.deps.json

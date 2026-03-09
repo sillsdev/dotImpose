@@ -2,29 +2,42 @@
 using System.IO;
 using PdfSharp.Drawing;
 using PdfSharp.Pdf;
-using PdfSharp.Pdf.IO;
 
 namespace DotImpose.LayoutMethods
 {
 	/// <summary>
-	/// Pass the input PDF file along to the output, optionally setting the TrimBox, ArtBox, and BleedBox
-	/// to a smaller size offset inside the MediaBox (and CropBox).
+	/// Pass the input PDF file along to the output while preserving source box intent.
+	/// When a source page does not define an explicit TrimBox, this method can synthesize one
+	/// by insetting from the source BleedBox/MediaBox using insetTrimboxMillimeters.
 	/// </summary>
 	public class NullLayoutMethod : LayoutMethod
 	{
 		/// <summary>
-		/// The bleed margin in millimeters.
+		/// Deprecated trim inset amount in millimeters.
 		/// </summary>
-		protected double _bleedMM;
+		protected double _insetTrimboxMillimeters;
 		private const double kBleedMicroDeltaMM = 0.01; // use for floating point comparisons instead of 0.0
+
+		/// <summary>
+		/// Initializes a new instance of the NullLayoutMethod class with no synthetic trim inset.
+		/// </summary>
+		public NullLayoutMethod() : base("original", "Original")
+		{
+			_insetTrimboxMillimeters = 0.0;
+		}
 
 		/// <summary>
 		/// Initializes a new instance of the NullLayoutMethod class.
 		/// </summary>
-		/// <param name="bleedMM">The amount in mm to offset the TrimBox et al. inside the MediaBox. The default is 0mm (TrimBox the same as the MediaBox).</param>
-		public NullLayoutMethod(double bleedMM = 0.0) : base("original", "Original")
+		/// <param name="insetTrimboxMillimeters">
+		/// Deprecated: The amount in mm used to synthesize a TrimBox inset when the source page has no explicit TrimBox.
+		/// This parameter is source-data-dependent and will be removed in a future release.
+		/// If source pages define an explicit TrimBox, passing a non-zero insetTrimboxMillimeters now throws.
+		/// </param>
+		[Obsolete("insetTrimboxMillimeters is deprecated and will be removed in a future release. Prefer defining TrimBox/BleedBox in the source PDF.")]
+		public NullLayoutMethod(double insetTrimboxMillimeters) : base("original", "Original")
 		{
-			_bleedMM = bleedMM;
+			_insetTrimboxMillimeters = insetTrimboxMillimeters;
 		}
 
 		/// <summary>
@@ -32,7 +45,7 @@ namespace DotImpose.LayoutMethods
 		/// </summary>
 		public override void Layout(XPdfForm inputPdf, string inputPath, string outputPath, PaperTarget paperTarget, bool rightToLeft, bool showCropMarks)
 		{
-			if (!showCropMarks && Math.Abs(_bleedMM) < kBleedMicroDeltaMM)
+			if (!showCropMarks && Math.Abs(_insetTrimboxMillimeters) < kBleedMicroDeltaMM)
 			{
 				File.Copy(inputPath, outputPath, true); // we don't have any value to add, so just deliver a copy of the original
 			}
@@ -41,6 +54,8 @@ namespace DotImpose.LayoutMethods
 				//_rightToLeft = rightToLeft;
 				_inputPdf = inputPdf;
 				_showCropMarks = showCropMarks;
+				EnsureSourcePageBoxesLoaded(inputPath);
+				ThrowIfDeprecatedInsetTrimboxMillimetersUsedWithExplicitSourceTrim();
 
 				PdfDocument outputDocument = new PdfDocument();
 				outputDocument.PageLayout = PdfPageLayout.SinglePage;
@@ -56,44 +71,85 @@ namespace DotImpose.LayoutMethods
 
 				for (int idx = 1; idx <= _inputPdf.PageCount; idx++)
 				{
-					using (XGraphics gfx = GetGraphicsForNewPage(outputDocument))
+					using (XGraphics gfx = GetGraphicsForNullPage(outputDocument, idx))
 					{
 						DrawPage(gfx, idx);
 					}
 				}
 
-				if (Math.Abs(_bleedMM) > kBleedMicroDeltaMM)
+				outputDocument.Save(outputPath);
+				outputDocument.Close();
+			}
+		}
+
+		private void ThrowIfDeprecatedInsetTrimboxMillimetersUsedWithExplicitSourceTrim()
+		{
+			if (Math.Abs(_insetTrimboxMillimeters) < kBleedMicroDeltaMM)
+				return;
+
+			for (var pageNumber = 1; pageNumber <= _inputPdf.PageCount; pageNumber++)
+			{
+				if (GetSourcePageBoxes(pageNumber).HasExplicitTrimBox)
 				{
-					var tempPath = Path.ChangeExtension(Path.Combine(Path.GetDirectoryName(outputPath),
-						Path.GetRandomFileName()), "pdf");
-					outputDocument.Save(tempPath);
-					outputDocument.Close();
-					outputDocument = PdfReader.Open(tempPath, PdfDocumentOpenMode.Import);
-					var bleedMargin = new XUnit(_bleedMM, XGraphicsUnit.Millimeter);
-					PdfDocument realOutput = new PdfDocument();
-					realOutput.PageLayout = PdfPageLayout.SinglePage;
-					var trimLocation = new XPoint(bleedMargin.Point, bleedMargin.Point);
-					foreach (var page in outputDocument.Pages)
-					{
-						var trimBox = new PdfRectangle(trimLocation, new XSize(page.MediaBox.Width - 2 * bleedMargin.Point, page.MediaBox.Height - 2 * bleedMargin.Point));
-						// All of the boxes start out the same size: MediaBox, CropBox, BleedBox, ArtBox, and TrimBox.
-						// MediaBox is presumably the physical paper size.
-						// Set CropBox the same as MediaBox.  CropBox limits what you see in Adobe Acrobat Reader DC and even Acrobat Pro.
-						// Also set BleedBox the same as MediaBox.  See https://i0.wp.com/makingcomics.spiltink.org/wp-content/uploads/2015/05/averageamericancomicsized.jpg.
-						page.BleedBox = page.MediaBox;
-						page.CropBox = page.MediaBox;
-						page.ArtBox = trimBox;
-						page.TrimBox = trimBox;
-						realOutput.AddPage(page);
-					}
-					outputDocument.Close();
-					File.Delete(tempPath);
-					realOutput.Save(outputPath);
+					throw new InvalidOperationException(
+						"NullLayoutMethod(insetTrimboxMillimeters) is deprecated and cannot be used when the source PDF defines TrimBox. " +
+						"Use NullLayoutMethod() and define trim/bleed boxes in the source PDF.");
 				}
-				else
-				{
-					outputDocument.Save(outputPath);
-				}
+			}
+		}
+
+		private XGraphics GetGraphicsForNullPage(PdfDocument outputDocument, int pageNumber)
+		{
+			var page = outputDocument.AddPage();
+			var cropMarkMargin = _showCropMarks
+				? XUnit.FromMillimeter(kMillimetersBetweenTrimAndMediaBox)
+				: XUnit.FromPoint(0);
+
+			if (_showCropMarks)
+			{
+				page.Width = XUnit.FromPoint(_paperWidth.Point + 2 * cropMarkMargin.Point);
+				page.Height = XUnit.FromPoint(_paperHeight.Point + 2 * cropMarkMargin.Point);
+			}
+			else
+			{
+				page.Width = _paperWidth;
+				page.Height = _paperHeight;
+			}
+
+			GetFinalBoxRectangles(pageNumber, cropMarkMargin, out var trimBoxRect, out var bleedBoxRect);
+			var trimBox = ToPdfRectangle(trimBoxRect);
+			page.TrimBox = trimBox;
+			page.BleedBox = ToPdfRectangle(bleedBoxRect);
+			page.ArtBox = trimBox;
+			page.CropBox = page.MediaBox;
+
+			var gfx = XGraphics.FromPdfPage(page);
+			if (_showCropMarks)
+			{
+				DrawCropMarks(page, gfx, cropMarkMargin);
+				gfx.TranslateTransform(cropMarkMargin.Point, cropMarkMargin.Point);
+			}
+
+			return gfx;
+		}
+
+		private void GetFinalBoxRectangles(int pageNumber, XUnit cropMarkMargin, out XRect trimBoxRect, out XRect bleedBoxRect)
+		{
+			var sourceBoxes = GetSourcePageBoxes(pageNumber);
+			trimBoxRect = sourceBoxes.TrimBox;
+			bleedBoxRect = sourceBoxes.BleedBox;
+
+			// Preserve explicit source trim intent; insetTrimboxMillimeters is only used to synthesize trim when no trim box exists.
+			if (Math.Abs(_insetTrimboxMillimeters) > kBleedMicroDeltaMM && !sourceBoxes.HasExplicitTrimBox)
+			{
+				var bleedInset = XUnit.FromMillimeter(_insetTrimboxMillimeters);
+				trimBoxRect = InsetBox(bleedBoxRect, bleedInset.Point);
+			}
+
+			if (cropMarkMargin.Point > 0)
+			{
+				trimBoxRect = OffsetBox(trimBoxRect, cropMarkMargin.Point, cropMarkMargin.Point);
+				bleedBoxRect = OffsetBox(bleedBoxRect, cropMarkMargin.Point, cropMarkMargin.Point);
 			}
 		}
 

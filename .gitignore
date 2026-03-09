@@ -12,3 +12,5 @@ _Resharper*
 /.vs/
 publish/
 artifacts/
+
+nupkg/local/

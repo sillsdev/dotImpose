@@ -76,14 +76,13 @@ namespace DotImpose.LayoutMethods
 		private void Draw8UpPageFor8PageBooklet(XGraphics gfx, int pageNumber, double xorigin, double yorigin)
 		{
 			var state = gfx.Save();
-			_inputPdf.PageNumber = pageNumber;
 			var box = new XRect(xorigin, yorigin, _paperWidth / 4, _paperHeight / 2);
 			if (yorigin == 0)
 			{
 				var pagePoint = new XPoint(xorigin + _paperWidth / 8, yorigin + _paperHeight / 4);
 				gfx.RotateAtTransform(180, pagePoint);
 			}
-			gfx.DrawImage(_inputPdf, box);
+			DrawPageUsingSourceTrimIntent(gfx, pageNumber, box);
 			gfx.Restore(state);
 		}
 	}

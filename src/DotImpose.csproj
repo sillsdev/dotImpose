@@ -25,6 +25,7 @@
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
         <PackageTags>pdf;imposition;layout;booklet;calendar</PackageTags>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <InformationalVersion>$(Version)</InformationalVersion>
         <!-- Generate XML documentation for IntelliSense -->
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <!-- Include README in NuGet package -->

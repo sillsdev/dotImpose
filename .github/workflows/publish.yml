@@ -2,10 +2,22 @@ name: Publish to NuGet
 
 on:
   workflow_dispatch:
+    inputs:
+      version-suffix:
+        description: "Prerelease suffix for test packages (example: test)"
+        required: false
+        default: "test"
+        type: string
+
+permissions:
+  contents: write
 
 jobs:
   build:
     uses: ./.github/workflows/build.yml
+    with:
+      artifact-name-suffix: "-publish"
+      version-suffix: ${{ inputs['version-suffix'] }}
 
   publish:
     needs: build
@@ -16,7 +28,7 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
-          name: nuget-packages-${{ needs.build.outputs.version }}
+          name: nuget-packages-${{ needs.build.outputs.version }}-publish
           path: nupkg/
 
       - name: Setup .NET
@@ -30,18 +42,41 @@ jobs:
           ls -la nupkg/
           echo ""
           echo "Version: ${{ needs.build.outputs.version }}"
-          echo "Packages will be published as UNLISTED to NuGet.org"
+          echo "Target: https://api.nuget.org/v3/index.json"
 
-      - name: Publish to NuGet
+      - name: Validate NuGet API key secret is configured
+        env:
+          NUGET_API_KEY: ${{ secrets.SILLSDEV_PUBLISH_NUGET_ORG }}
+        run: |
+          if [ -z "$NUGET_API_KEY" ]; then
+            echo "Missing required repository secret: SILLSDEV_PUBLISH_NUGET_ORG"
+            exit 1
+          fi
+
+      - name: Publish package to NuGet
         run: |
           for file in nupkg/*.nupkg; do
-            echo "Publishing $file (unlisted)"
+            echo "Publishing $file"
+            dotnet nuget push "$file" --api-key ${{ secrets.SILLSDEV_PUBLISH_NUGET_ORG }} --source https://api.nuget.org/v3/index.json --skip-duplicate --no-service-endpoint
+          done
+
+      - name: Publish symbols package to NuGet
+        run: |
+          shopt -s nullglob
+          files=(nupkg/*.snupkg)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No .snupkg files found; skipping symbols publish."
+            exit 0
+          fi
+
+          for file in "${files[@]}"; do
+            echo "Publishing symbols $file"
             dotnet nuget push "$file" --api-key ${{ secrets.SILLSDEV_PUBLISH_NUGET_ORG }} --source https://api.nuget.org/v3/index.json --skip-duplicate --no-service-endpoint
           done
 
       - name: Publish success
         run: |
-          echo "✅ Successfully published to NuGet (unlisted)!"
+          echo "✅ Successfully published to NuGet!"
           echo "📦 Version: ${{ needs.build.outputs.version }}"
           echo "🔗 Check your package at: https://www.nuget.org/packages/sillsdev.dotImpose/"
-          echo "ℹ️ Package is unlisted - users need the exact version number to install it"
+          echo "Install with: dotnet add package sillsdev.dotImpose --version ${{ needs.build.outputs.version }}"
